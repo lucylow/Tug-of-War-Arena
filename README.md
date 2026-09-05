@@ -1,962 +1,1900 @@
 # Tug of War Arena
 
-> **A Mobile-First Multiplayer Tug-of-War Game for the Decentraland Metaverse**
+> **A mobile-first, social tug-of-war experience designed for the Decentraland / Friendzone ecosystem.**
+>
+> **Core idea:** turn a simple competitive mechanic into a repeatable social loop: **join → pull → react → progress → invite → rematch**.
 
-[![Hackathon](https://img.shields.io/badge/Decentraland-Friendzone%20Buildathon-4D96FF?style=flat-square&logo=decentraland)](https://dorahacks.io)
-[![React Native](https://img.shields.io/badge/React%20Native-0.72-61DAFB?style=flat-square&logo=react)](https://reactnative.dev)
-[![Colyseus](https://img.shields.io/badge/Colyseus-0.15-00CC88?style=flat-square)](https://colyseus.io)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.19-363636?style=flat-square&logo=solidity)](https://soliditylang.org)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-
----
-
-## 📖 Table of Contents
-
-- [Overview](#-overview)
-- [Project Architecture](#-project-architecture)
-- [Key Features](#-key-features)
-- [Technology Stack](#-technology-stack)
-- [System Design](#-system-design)
-- [Smart Contracts](#-smart-contracts)
-- [Mobile Client](#-mobile-client)
-- [Decentraland Scene](#-decentraland-scene)
-- [Installation & Setup](#-installation--setup)
-- [Deployment](#-deployment)
-- [Testing](#-testing)
-- [Project Structure](#-project-structure)
-- [Contributing](#-contributing)
-- [License](#-license)
+[![React Native](https://img.shields.io/badge/React%20Native-0.81.x-61DAFB?logo=react)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-54-000020?logo=expo)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
+[![tRPC](https://img.shields.io/badge/tRPC-11-2596BE)](https://trpc.io/)
+[![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest)](https://vitest.dev/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
-## 🎯 Overview
+## Table of Contents
 
-**Tug of War Arena** is a **mobile-first multiplayer tug-of-war game** built for the **Decentraland metaverse**. Players compete in 2v2 or 4v4 matches by rapidly tapping or swiping to generate "pull power" on a rope. The team with the highest collective power wins the round.
-
-This project was developed for the **Decentraland Friendzone Mobile Buildathon** — a competition focused on creating immersive, mobile-first experiences within the Decentraland virtual world. All code is **open source** and published in a public GitHub repository.
-
-### Key Differentiators
-
-| Aspect | Description |
-|--------|-------------|
-| **Mobile-First** | Designed for touch controls and small screens from the ground up |
-| **Multiplayer** | Real-time 2v2/4v4 matches with authoritative server |
-| **Web3 Native** | Blockchain integration with NFT rewards and $PULL token |
-| **Metaverse Ready** | Deployable as a Decentraland scene with mobile client |
-| **Social First** | Built-in chat, parties, friend system, and watch parties |
+* [Overview](#overview)
+* [Why Tug of War Arena](#why-tug-of-war-arena)
+* [Friendzone Upgrade](#friendzone-upgrade)
+* [Core Experience](#core-experience)
+* [Social Loop](#social-loop)
+* [Product Principles](#product-principles)
+* [Architecture](#architecture)
+* [Architecture at a Glance](#architecture-at-a-glance)
+* [Client Architecture](#client-architecture)
+* [Domain Architecture](#domain-architecture)
+* [Server Architecture](#server-architecture)
+* [Data Model](#data-model)
+* [State Machine](#state-machine)
+* [Game Mechanics](#game-mechanics)
+* [Friendzone Mechanics](#friendzone-mechanics)
+* [Mobile UX](#mobile-ux)
+* [Accessibility](#accessibility)
+* [Offline-First Reliability](#offline-first-reliability)
+* [Networking](#networking)
+* [Deep Links and World Bridging](#deep-links-and-world-bridging)
+* [Persistence and Migrations](#persistence-and-migrations)
+* [Analytics and Telemetry](#analytics-and-telemetry)
+* [Performance Strategy](#performance-strategy)
+* [Security and Trust Boundaries](#security-and-trust-boundaries)
+* [Project Structure](#project-structure)
+* [Important Files](#important-files)
+* [Implementation Details](#implementation-details)
+* [Running Locally](#running-locally)
+* [Environment Configuration](#environment-configuration)
+* [Development Workflow](#development-workflow)
+* [Testing](#testing)
+* [Mobile QA Checklist](#mobile-qa-checklist)
+* [Production Multiplayer Path](#production-multiplayer-path)
+* [Decentraland Integration Strategy](#decentraland-integration-strategy)
+* [Demo Mode](#demo-mode)
+* [Hackathon Demo Script](#hackathon-demo-script)
+* [Submission Positioning](#submission-positioning)
+* [Limitations and Honest Scope](#limitations-and-honest-scope)
+* [Roadmap](#roadmap)
+* [Contributing](#contributing)
+* [License](#license)
 
 ---
 
-## 🏗️ Project Architecture
+## Overview
 
-### High-Level Architecture
+Tug of War Arena is a **portrait-first React Native / Expo experience** centered around a very simple interaction: a player pulls a virtual rope against another player or opposing team.
 
-```mermaid
-flowchart TB
-    subgraph Client["Mobile Client (React Native)"]
-        UI["UI Layer"]
-        Store["Redux Store"]
-        GameEngine["Game Engine"]
-        Web3Client["Web3 Client"]
-        Chat["Chat & Social"]
-    end
+The project is deliberately built around the idea that the gameplay mechanic should be understandable in seconds, but the surrounding system should make the experience worth returning to.
 
-    subgraph Decentraland["Decentraland Scene"]
-        Scene3D["3D Scene (SDK 7)"]
-        SceneNet["Network Sync (CRDT)"]
-        SceneUI["UI Overlay"]
-    end
+The Friendzone-focused upgrade adds a complete **social companion layer** around the arena:
 
-    subgraph Server["Game Server (Node.js + Colyseus)"]
-        Room["Game Room"]
-        Matchmaking["Matchmaking"]
-        State["State Management"]
-        Auth["Authentication"]
-    end
+* room creation and joining
+* invite codes
+* share/copy invite flows
+* player presence
+* crew reactions
+* one-thumb gameplay
+* streak feedback
+* match recaps
+* daily missions
+* leaderboard presentation
+* retention prompts
+* offline-first local state
+* network health feedback
+* deep-link parsing/building
+* a multiplayer API boundary
+* an offline action queue
+* analytics and telemetry primitives
+* deterministic domain tests
 
-    subgraph Blockchain["Blockchain Layer"]
-        NFT["NFT Contract (ERC-721)"]
-        Token["$PULL Token (ERC-20)"]
-        VRF["Chainlink VRF"]
-        Marketplace["Marketplace"]
-    end
+The architecture intentionally separates UI, domain logic, persistence, network access, and server concerns. The goal is to make the project easy to demonstrate today and easy to replace with production services later.
 
-    subgraph Services["Backend Services"]
-        API["REST API"]
-        DB["PostgreSQL + Redis"]
-        WS["WebSocket Server"]
-        Social["Social Service"]
-    end
+---
 
-    Client -->|WebSocket| Server
-    Client -->|HTTP| Services
-    Client -->|Web3| Blockchain
-    Decentraland -->|WebSocket| Server
-    Decentraland -->|RPC| Blockchain
-    Server -->|State Sync| Client
-    Server -->|State Sync| Decentraland
-    Services -->|Data| Server
-    Blockchain -->|Rewards| Client
+## Why Tug of War Arena
+
+Tug-of-war is useful as a mobile interaction because the core mechanic requires almost no explanation:
+
+1. Choose a side.
+2. Press the pull control.
+3. Build momentum.
+4. Beat the opposing side.
+5. Celebrate.
+
+That simplicity creates room for the social product layer to carry the complexity.
+
+Instead of building a game that only answers **“Can I win?”**, this project asks:
+
+> **“Can I create a reason for my friends to join me, react to me, and come back for another round?”**
+
+That becomes the design philosophy behind the Friendzone upgrade.
+
+---
+
+## Friendzone Upgrade
+
+The current repository includes a dedicated **Crew** experience alongside the original Home arena.
+
+The upgrade was designed as an additive layer so the existing arena is preserved as a safe fallback/demo path.
+
+### Added client surfaces
+
+| Surface        | Purpose                                   |
+| -------------- | ----------------------------------------- |
+| Crew tab       | Main Friendzone social hub                |
+| Party panel    | Create/join a room and manage invite flow |
+| Presence strip | Make nearby crew visible                  |
+| Reaction bar   | Low-friction social signaling             |
+| Mobile arena   | Large-touch competitive loop              |
+| Mission card   | Daily engagement and return behavior      |
+| Match recap    | Clear outcome + progress feedback         |
+| Leaderboard    | Lightweight social proof                  |
+| Network health | Honest online/offline state               |
+| Retention card | Explicit next-action / rematch loop       |
+
+### Added domain capabilities
+
+The `lib/friendzone/` module is intentionally dependency-light and contains reusable game/social primitives instead of putting all logic inside React components.
+
+The current module set covers:
+
+* domain types
+* constants
+* stable identifiers
+* deterministic clocks
+* validation
+* scoring
+* streaks
+* daily missions
+* reactions
+* party logic
+* leaderboard logic
+* retention signals
+* analytics events
+* accessibility helpers
+* performance budgets
+* persistence
+* migrations
+* reducers
+* selectors
+* actions
+* sharing
+* network health
+* HTTP network client
+* seeded demo data
+* profile management
+* Friendzone bridge/deep links
+* offline outbox queue
+* typed errors
+* feature flags
+* local telemetry
+
+---
+
+## Core Experience
+
+The app has two complementary modes.
+
+### Home
+
+The original project experience remains available at the Home tab. This provides a familiar fallback and preserves the initial gameplay concept.
+
+### Crew
+
+The Friendzone Crew screen turns the game into a social surface. A typical session looks like:
+
+```text
+Open app
+  ↓
+Load local player state
+  ↓
+Open Crew
+  ↓
+Create / join room
+  ↓
+Share invite
+  ↓
+See presence
+  ↓
+Send reaction
+  ↓
+Choose Sun or Moon
+  ↓
+Enter one-thumb arena
+  ↓
+Build streak
+  ↓
+Finish match
+  ↓
+Update missions + stats
+  ↓
+Read recap
+  ↓
+Return to crew
+  ↓
+Invite / react / rematch
 ```
 
-### Data Flow Diagram
+The important product decision is that the match is not treated as the end of the experience. The match is the center of the loop.
 
-```mermaid
-sequenceDiagram
-    participant P1 as Player 1 (Mobile)
-    participant P2 as Player 2 (Mobile)
-    participant Server as Game Server
-    participant Chain as Blockchain
+---
 
-    P1->>Server: Join Match (WebSocket)
-    P2->>Server: Join Match (WebSocket)
-    Server->>Server: Assign Teams, Start Countdown
-    Server-->>P1: Match Started
-    Server-->>P2: Match Started
-    
-    loop Game Loop (30fps)
-        P1->>Server: Tap/Swipe Input
-        P2->>Server: Tap/Swipe Input
-        Server->>Server: Update Power, Rope Position
-        Server-->>P1: State Update
-        Server-->>P2: State Update
-    end
-    
-    Server->>Server: Check Win Condition
-    Server-->>P1: Match Result
-    Server-->>P2: Match Result
-    
-    alt Winner
-        P1->>Chain: Claim Prize (NFT/Token)
-        Chain-->>P1: Reward Transferred
-    end
-```
+## Social Loop
 
-### Mobile Client Architecture
+The Friendzone layer is designed around a repeatable loop:
 
 ```mermaid
 flowchart LR
-    subgraph Screens["Screens"]
-        Home["Home"]
-        Lobby["Lobby"]
-        Game["Game"]
-        Results["Results"]
-        Store["Store"]
-        Profile["Profile"]
-        Social["Social"]
-    end
-
-    subgraph Components["Components"]
-        UI["UI Components"]
-        GameComp["Game Components"]
-        SocialComp["Social Components"]
-        NFTComp["NFT Components"]
-    end
-
-    subgraph Hooks["Hooks"]
-        GameHook["useGameEngine"]
-        Web3Hook["useWeb3"]
-        SocialHook["useSocial"]
-        NFTHook["useNFT"]
-    end
-
-    subgraph Services["Services"]
-        IAP["IAP Service"]
-        Ad["Ad Service"]
-        API["API Client"]
-        WS["WebSocket"]
-        Storage["Storage"]
-    end
-
-    subgraph Store["Redux Store"]
-        GameSlice["Game Slice"]
-        PlayerSlice["Player Slice"]
-        SocialSlice["Social Slice"]
-        LevelSlice["Level Slice"]
-    end
-
-    Screens --> Components
-    Screens --> Hooks
-    Hooks --> Services
-    Hooks --> Store
-    Components --> Store
-    Services --> Store
+    A[Discover] --> B[Join Crew]
+    B --> C[Invite Friends]
+    C --> D[Presence]
+    D --> E[Match]
+    E --> F[React]
+    F --> G[Mission Progress]
+    G --> H[Recap]
+    H --> I[Rematch]
+    I --> C
 ```
 
-### Game Server Architecture
+### Why the loop matters
+
+A competitive mini-game can be entertaining but still have low retention if the experience ends immediately after the result.
+
+This project adds explicit post-match state:
+
+* the player sees what happened
+* statistics are updated
+* mission progress changes
+* a personal best can be highlighted
+* the player can react
+* the player can return to the crew
+* the room can be reused
+* invitations remain one interaction away
+
+The result is a product loop rather than a single interaction.
+
+---
+
+## Product Principles
+
+### 1. One-thumb first
+
+The most important gameplay action should work with one hand, in portrait orientation, without precision gestures.
+
+### 2. Social state should be visible
+
+A player should not need to enter several screens to understand whether friends are around, whether a room exists, or whether the session is active.
+
+### 3. Offline should degrade gracefully
+
+A network issue should reduce multiplayer capabilities without making the local demo unusable.
+
+### 4. Every color has a semantic backup
+
+Status and actions also use text, labels, icons, or explicit state descriptions.
+
+### 5. The domain should not depend on React
+
+Game rules and social transformations live in plain TypeScript modules whenever practical. This keeps business logic testable and portable.
+
+### 6. Demo reliability beats architectural theatre
+
+The repository contains clear seams for production services, but the default demonstration path avoids making a working demo dependent on infrastructure that may not be available during judging.
+
+---
+
+# Architecture
+
+## Architecture at a Glance
 
 ```mermaid
-flowchart TB
-    subgraph Colyseus["Colyseus Server"]
-        Room["TugOfWarRoom"]
-        State["MatchState Schema"]
-        Handlers["Message Handlers"]
-        Timer["Game Loop Timer"]
-    end
+flowchart TD
+    UI[Expo Router + React Native]
+    HUB[FriendzoneHub]
+    COMPONENTS[Friendzone UI Components]
+    DOMAIN[Friendzone Domain Layer]
+    STORE[AsyncStorage Snapshot]
+    QUEUE[Offline Outbox]
+    CLIENT[HTTP Friendzone Client]
+    SERVER[tRPC Server]
+    WORLD[Decentraland / World Bridge]
+    TELEMETRY[Analytics + Telemetry]
 
-    subgraph Logic["Game Logic"]
-        PowerCalc["Power Calculator"]
-        RopePhysics["Rope Physics"]
-        WinChecker["Win Checker"]
-        TeamManager["Team Manager"]
-    end
-
-    subgraph Storage["Storage"]
-        Redis["Redis (Active State)"]
-        Postgres["PostgreSQL (Persistence)"]
-    end
-
-    Room --> State
-    State --> Logic
-    Room --> Handlers
-    Handlers --> Logic
-    Timer --> Room
-    State --> Redis
-    State --> Postgres
-    Room -->|Broadcast| Clients
+    UI --> HUB
+    HUB --> COMPONENTS
+    COMPONENTS --> DOMAIN
+    DOMAIN --> STORE
+    DOMAIN --> QUEUE
+    DOMAIN --> CLIENT
+    CLIENT --> SERVER
+    DOMAIN --> WORLD
+    DOMAIN --> TELEMETRY
 ```
 
----
+The most important boundary is:
 
-## ✨ Key Features
+```text
+React Native UI
+      ↓
+Friendzone domain logic
+      ↓
+Persistence / network / platform adapters
+```
 
-### 🎮 Core Gameplay
-
-| Feature | Description |
-|---------|-------------|
-| **2v2 & 4v4 Matches** | Team-based tug-of-war with up to 8 players |
-| **Touch Controls** | Tap for power, swipe for power surge |
-| **Real-Time Sync** | 30fps server-authoritative state updates |
-| **Rope Physics** | Dynamic rope movement with tension simulation |
-| **Win Conditions** | Pull rope to opponent's side or time runs out |
-| **Power Bars** | Visual team power indicators with glow effects |
-| **Combo System** | Consecutive taps increase power multiplier |
-| **Special Moves** | Power surge, rope tug, freeze, shield |
-
-### 🤝 Social Features
-
-| Feature | Description |
-|---------|-------------|
-| **Friend System** | Add/remove friends, online status, friend requests |
-| **Parties** | Create/join parties with invite codes |
-| **In-Game Chat** | Global, party, team, and direct messaging |
-| **Quick Chat** | Predefined messages for fast communication |
-| **Emotes** | Custom emote wheel with reactions |
-| **Watch Parties** | Spectate matches with friends |
-| **Activity Feed** | Recent matches, friend activity, highlights |
-| **Referral Program** | Share-to-earn with referral codes |
-
-### 💰 Web3 & Blockchain
-
-| Feature | Description |
-|---------|-------------|
-| **$PULL Token** | ERC-20 utility token for rewards and purchases |
-| **NFT Collection** | ERC-721 NFTs with rarity tiers (Common → Mythic) |
-| **Mystery Boxes** | Chainlink VRF-powered random NFT minting |
-| **Marketplace** | Buy/sell NFTs with Chainlink price feeds |
-| **Staking** | Stake NFTs to earn $PULL rewards |
-| **Battle System** | NFT vs NFT battles with random outcomes |
-| **Breeding** | Combine two NFTs to create new ones |
-| **Dynamic NFTs** | NFTs that evolve based on player interaction |
-| **Guilds** | On-chain guilds with reputation system |
-| **Tournaments** | Bracket-based NFT tournaments with prize pools |
-
-### 🏆 Progression & Rewards
-
-| Feature | Description |
-|---------|-------------|
-| **Level System** | 100 levels with XP progression |
-| **Daily Rewards** | Streak-based daily login rewards |
-| **Battle Pass** | Seasonal battle pass with free/premium tiers |
-| **Achievements** | 50+ achievements with badge rewards |
-| **Leaderboards** | Global and friend leaderboards |
-| **Skill-Based Matchmaking** | Match players of similar skill levels |
-
-### 🎨 Visual & UX
-
-| Feature | Description |
-|---------|-------------|
-| **Particle Systems** | Fire, sparks, trails, confetti, fireworks |
-| **Animated UI** | Spring animations, glow effects, pulsing buttons |
-| **Physics Rope** | Tension-based rope simulation with Skia |
-| **Dynamic Environments** | Themed arenas with obstacles and hazards |
-| **Dark/Light Mode** | System preference detection |
-| **Haptic Feedback** | Tactile feedback for all interactions |
-| **Accessibility** | Screen reader support, dynamic type, high contrast |
+That separation makes it possible to improve the visuals without rewriting gameplay logic and improve the backend without rewriting the UI.
 
 ---
 
-## 🛠️ Technology Stack
+## Client Architecture
 
-### Frontend (Mobile Client)
+The application uses Expo Router for navigation and a conventional React Native component architecture.
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React Native | 0.72+ | Mobile app framework |
-| Expo | 49+ | Development and build toolchain |
-| React Native Reanimated | 3.x | GPU-accelerated animations |
-| React Native Skia | 0.1.x | 2D graphics rendering |
-| React Navigation | 6.x | Navigation |
-| Redux Toolkit | 1.9.x | State management |
-| React Native Gesture Handler | 2.x | Touch gesture handling |
-| React Native Safe Area | 4.x | Safe area management |
-| @shopify/react-native-skia | Latest | Canvas-based 2D rendering |
-| react-native-fast-image | Latest | Image caching |
+The Friendzone route is:
 
-### Backend (Game Server)
+```text
+app/(tabs)/friendzone.tsx
+        ↓
+components/friendzone/FriendzoneHub.tsx
+        ↓
+Friendzone component tree
+        ↓
+lib/friendzone/*
+```
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Node.js | 18+ | Runtime environment |
-| Colyseus | 0.15.x | Multiplayer game server |
-| Express | 4.x | REST API |
-| PostgreSQL | 15+ | Persistent data storage |
-| Redis | 7.x | In-memory state cache |
-| Socket.io | 4.x | WebSocket communication |
-| Prisma | 4.x | ORM for PostgreSQL |
+The tab layout adds Crew while retaining Home.
 
-### Blockchain
+### Navigation
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Solidity | 0.8.19 | Smart contracts |
-| OpenZeppelin | 4.x | Contract libraries |
-| Chainlink VRF | 2.5+ | Verifiable randomness |
-| Chainlink Automation | Latest | Dynamic NFT updates |
-| Chainlink Price Feeds | Latest | Real-time pricing |
-| Hardhat | 2.x | Development and deployment |
-| Ethers.js | 6.x | Web3 interactions |
-| Web3Modal | Latest | Wallet connection |
+```tsx
+<Tabs.Screen
+  name="friendzone"
+  options={{
+    title: "Crew",
+  }}
+/>
 
-### Decentraland
+<Tabs.Screen
+  name="index"
+  options={{
+    title: "Home",
+  }}
+/>
+```
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Decentraland SDK | 7.x | Scene development |
-| ECS | 7.x | Entity Component System |
-| syncEntity | 7.x | CRDT-based networking |
-| MessageBus | 7.x | P2P communication |
+This additive approach is important because the project can demonstrate the original game and the upgraded social experience without destroying the earlier path.
 
 ---
 
-## 📐 System Design
+## Domain Architecture
 
-### Game Loop
+The domain layer is exported from:
+
+```text
+lib/friendzone/index.ts
+```
+
+The index acts as a clean public surface for the Friendzone subsystem.
+
+### Domain package map
+
+```text
+lib/friendzone/
+├── accessibility.ts
+├── actions.ts
+├── analytics.ts
+├── bridge.ts
+├── clock.ts
+├── constants.ts
+├── demo.ts
+├── error.ts
+├── feature-flags.ts
+├── ids.ts
+├── index.ts
+├── leaderboard.ts
+├── migrations.ts
+├── missions.ts
+├── network-client.ts
+├── network.ts
+├── party.ts
+├── performance.ts
+├── profile.ts
+├── queue.ts
+├── reactions.ts
+├── reducer.ts
+├── retention.ts
+├── scoring.ts
+├── selectors.ts
+├── share.ts
+├── storage.ts
+├── streaks.ts
+├── telemetry.ts
+├── types.ts
+└── validation.ts
+```
+
+This structure is intentionally explicit. A future contributor can find the business rule they need without searching through a single 10,000-line application component.
+
+---
+
+## Server Architecture
+
+The server exposes Friendzone room primitives under the tRPC router.
+
+Current room procedures include:
+
+```text
+friendzone.createRoom
+friendzone.getRoom
+friendzone.joinRoom
+friendzone.setReady
+friendzone.pull
+friendzone.reaction
+friendzone.heartbeat
+friendzone.resetRoom
+```
+
+The current server implementation keeps room state in memory.
+
+That is a deliberate prototype boundary:
+
+```text
+Current prototype
+    in-memory room map
+
+Production path
+    Redis / authoritative game service
+              +
+    persistent player/profile storage
+```
+
+The UI does not need to know which persistence layer is behind the contract.
+
+---
+
+# Data Model
+
+## Friendzone Player
+
+```ts
+export interface FriendzonePlayer {
+  id: string;
+  displayName: string;
+  team: Team;
+  status: PresenceStatus;
+  score: number;
+  pulls: number;
+  streak: number;
+  ready: boolean;
+  lastSeenAt: number;
+}
+```
+
+### Responsibilities
+
+* identity within the room
+* team assignment
+* online presence
+* score/pull state
+* readiness
+* last-seen timestamp
+
+---
+
+## Friendzone Room
+
+```ts
+export interface FriendzoneRoom {
+  id: string;
+  code: string;
+  visibility: RoomVisibility;
+  maxPlayers: number;
+  hostId: string;
+  createdAt: number;
+  expiresAt: number;
+  phase: MatchPhase;
+  round: number;
+  timeRemainingMs: number;
+  ropePosition: number;
+  players: FriendzonePlayer[];
+  recentReactions: Array<{
+    id: string;
+    playerId: string;
+    reaction: Reaction;
+    at: number;
+  }>;
+}
+```
+
+The room is intentionally self-contained enough for a lobby or synchronized room adapter to reconstruct the visible state.
+
+---
+
+## Match Result
+
+```ts
+export interface MatchResult {
+  id: string;
+  roomId: string;
+  winner: Team;
+  playerTeam: Team;
+  pulls: number;
+  durationMs: number;
+  opponentPulls: number;
+  personalBest: boolean;
+  createdAt: number;
+}
+```
+
+The result object is the bridge between gameplay and retention.
+
+It is used to update:
+
+* total matches
+* wins/losses
+* pulls
+* streak/personal-best state
+* daily missions
+* the match recap
+
+---
+
+## Daily Mission
+
+```ts
+export interface DailyMission {
+  id: string;
+  title: string;
+  description: string;
+  target: number;
+  progress: number;
+  reward: number;
+  completed: boolean;
+}
+```
+
+This model is intentionally lightweight so missions can remain local-first during a demo.
+
+---
+
+## Snapshot
+
+```ts
+export interface FriendzoneSnapshot {
+  profile: FriendzoneProfile;
+  currentRoom: FriendzoneRoom | null;
+  activity: ActivityItem[];
+  results: MatchResult[];
+  leaderboard: LeaderboardEntry[];
+  network: NetworkHealth;
+  hydratedAt: number;
+}
+```
+
+The snapshot is the core persistence boundary for the mobile experience.
+
+---
+
+# State Machine
+
+## Match Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Waiting: Match Created
-    Waiting --> Countdown: 2+ Players Ready
-    Countdown --> Playing: 3-2-1 GO!
-    Playing --> Finished: Win Condition Met
-    Playing --> Finished: Time Expired
-    Finished --> [*]: Results Displayed
+    [*] --> lobby
+    lobby --> countdown: Ready players
+    countdown --> active: GO
+    active --> finished: Rope reaches threshold
+    active --> finished: Time expires
+    finished --> lobby: Reset / Rematch
 ```
 
-### State Machine
+This makes the game state easy to reason about and makes it possible to attach UI behavior to a small set of well-defined phases.
 
-```typescript
-enum MatchStatus {
-  WAITING = 'waiting',
-  COUNTDOWN = 'countdown',
-  PLAYING = 'playing',
-  FINISHED = 'finished'
+---
+
+# Game Mechanics
+
+## Teams
+
+The Friendzone mobile experience exposes two simple team identities:
+
+* ☀️ **Sun Crew**
+* 🌙 **Moon Crew**
+
+The player chooses a preferred side before entering the arena.
+
+The team is part of the player profile and also part of the room state.
+
+---
+
+## Pulling
+
+The mobile arena translates touch interaction into discrete pull events.
+
+The local reducer records:
+
+* player ID
+* team
+* delta
+* timestamp
+
+Example action shape:
+
+```ts
+{
+  type: "pull",
+  playerId,
+  team,
+  delta,
+  at: Date.now(),
 }
-
-interface MatchState {
-  id: string;
-  status: MatchStatus;
-  players: Map<string, Player>;
-  teamPower: [number, number];
-  ropePosition: number;
-  timeRemaining: number;
-  scores: [number, number];
-}
 ```
 
-### Networking Protocol
+The reducer updates the player's pull count, score, and activity timestamp without coupling this state transition to UI rendering.
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Server
+---
 
-    Client->>Server: joinOrCreate("tug-of-war")
-    Server-->>Client: room.state (initial)
-    
-    loop Every 100ms
-        Client->>Server: "tap" / "swipe"
-        Server->>Server: validate & update state
-        Server-->>Client: state-update (patch)
-    end
-    
-    Server->>Server: checkWinCondition()
-    Server-->>Client: "match-end" (winner)
+## Streaks
+
+Streaks reward rapid, consistent interaction.
+
+The streak subsystem provides the foundation for:
+
+* personal-best recognition
+* mission progress
+* visual momentum feedback
+* future combo systems
+
+The important design constraint is that the streak should feel like additional momentum, not a second game layered on top of the first one.
+
+---
+
+## Scoring
+
+Scoring is isolated in `lib/friendzone/scoring.ts` so that balancing can be changed without changing the UI.
+
+A future production balancing pass can replace the constants or formula while retaining the same result contracts.
+
+---
+
+# Friendzone Mechanics
+
+## Room Creation
+
+A room is created from a local player profile and given a short invite code.
+
+The client generates the first visible social state immediately. This avoids a blank UI while the network layer is unavailable.
+
+### Design goals
+
+* fast
+* readable
+* shareable
+* bounded lifetime
+* invite-first
+* safe fallback
+
+---
+
+## Room Joining
+
+The demo client supports joining the currently represented room through the local state contract, while the optional HTTP adapter provides a path to a real backend.
+
+The server contract validates:
+
+* room code format
+* room existence
+* room expiry
+* room capacity
+* player identity
+
+---
+
+## Presence
+
+Presence is intentionally visual and lightweight.
+
+The client shows room members with status labels instead of relying only on color.
+
+This is especially important on mobile because users may be viewing the app under poor brightness or different accessibility settings.
+
+---
+
+## Reactions
+
+Supported quick reactions are intentionally minimal:
+
+```text
+⚡  🔥  👏  💪  🌙  ☀️
 ```
 
-### Database Schema (PostgreSQL)
+The purpose is not to create a full chat system; it is to create a fast social signal that works during a match or immediately after a match.
 
-```sql
--- Core Tables
-users          -- Player accounts and profiles
-matches        -- Match history and results
-player_stats   -- Aggregated player statistics
-friend_requests -- Friend request system
-parties        -- Party/group management
-chat_messages  -- Chat history
+This is a good extension point for future emoji reactions, player stickers, team chants, or spatial reactions in a Decentraland scene.
 
--- Web3 Tables
-nfts           -- NFT ownership and metadata
-pull_balances  -- $PULL token balances
-transactions   -- On-chain transaction history
-staking        -- NFT staking records
-guilds         -- Guild/clan membership
+---
 
--- Progression
-quests         -- Quest definitions and progress
-achievements   -- Achievement unlocks
-battle_pass    -- Battle pass progression
-levels         -- XP and level progression
+# Mobile UX
+
+## One-Thumb Arena
+
+The `MobileArena` component is designed around a single primary action.
+
+The most important button is intentionally large, high-contrast, and placed for comfortable interaction.
+
+```text
+┌─────────────────────────────┐
+│        MATCH HUD            │
+│                             │
+│  ☀️  =======🪢=======  🌙   │
+│                             │
+│        ROPE POSITION        │
+│                             │
+│      ┌───────────────┐      │
+│      │     PULL      │      │
+│      └───────────────┘      │
+│                             │
+│     streak / feedback       │
+└─────────────────────────────┘
+```
+
+The interaction is intended to feel immediate:
+
+```text
+Touch
+  ↓
+Haptic feedback
+  ↓
+Pull state
+  ↓
+Streak feedback
+  ↓
+Rope movement
 ```
 
 ---
 
-## 📄 Smart Contracts
+## Mobile-First Content Hierarchy
 
-### Contract Overview
+The Crew screen prioritizes information in this order:
 
-| Contract | Type | Description |
-|----------|------|-------------|
-| `TugOfWarArena.sol` | Core | Main game logic, match management, prize distribution |
-| `PullToken.sol` | ERC-20 | $PULL utility token with minting and burning |
-| `TugOfWarNFT.sol` | ERC-721 | NFT collection with rarity tiers and power bonuses |
-| `MysteryBox.sol` | VRF | Chainlink VRF-powered random NFT minting |
-| `NFTMarketplace.sol` | Marketplace | Buy/sell NFTs with price feeds |
-| `NFTStaking.sol` | Staking | Stake NFTs to earn $PULL rewards |
-| `NFTBattle.sol` | Battle | NFT vs NFT battles with random outcomes |
-| `NFTBreeding.sol` | Breeding | Combine NFTs to create new ones |
-| `DynamicNFT.sol` | Dynamic | NFTs that evolve with player interaction |
-| `NFTGuild.sol` | Guild | On-chain guild management with reputation |
-| `NFTTournament.sol` | Tournament | Bracket-based tournaments with prize pools |
-| `RevenueSplitter.sol` | Finance | Automated revenue distribution |
+1. current room / crew state
+2. network health
+3. core social action
+4. arena action
+5. current result
+6. missions
+7. leaderboard
+8. reset/debug controls
 
-### Contract Architecture
-
-```mermaid
-flowchart TB
-    subgraph Core["Core Contracts"]
-        Game["TugOfWarArena.sol"]
-        Token["PullToken.sol"]
-    end
-
-    subgraph NFT["NFT Ecosystem"]
-        NFT["TugOfWarNFT.sol"]
-        MysteryBox["MysteryBox.sol"]
-        Marketplace["NFTMarketplace.sol"]
-        Staking["NFTStaking.sol"]
-        Battle["NFTBattle.sol"]
-        Breeding["NFTBreeding.sol"]
-        Dynamic["DynamicNFT.sol"]
-    end
-
-    subgraph Social["Social Contracts"]
-        Guild["NFTGuild.sol"]
-        Tournament["NFTTournament.sol"]
-    end
-
-    subgraph Finance["Finance"]
-        Splitter["RevenueSplitter.sol"]
-    end
-
-    subgraph Chainlink["Chainlink Services"]
-        VRF["VRF Coordinator"]
-        Automation["Automation"]
-        PriceFeed["Price Feeds"]
-    end
-
-    Game --> Token
-    MysteryBox --> NFT
-    MysteryBox --> VRF
-    Marketplace --> PriceFeed
-    Dynamic --> Automation
-    Game --> Splitter
-    Guild --> NFT
-    Tournament --> NFT
-```
-
-### Rarity Tiers
-
-| Tier | Supply | Power Bonus | Speed Bonus | Color |
-|------|--------|-------------|-------------|-------|
-| Common | 5,000 | 5 | 2 | #808080 |
-| Uncommon | 2,000 | 10 | 4 | #008000 |
-| Rare | 1,000 | 20 | 8 | #0000FF |
-| Epic | 500 | 35 | 15 | #800080 |
-| Legendary | 200 | 50 | 25 | #FF8C00 |
-| Mythic | 50 | 100 | 50 | #FF0000 |
+That ordering is intentional. The player should not need to scroll through secondary information before reaching the game.
 
 ---
 
-## 📱 Mobile Client
+# Accessibility
 
-### Screen Navigation
+Accessibility is treated as a product requirement rather than a documentation item.
+
+The Friendzone domain includes accessibility helpers and the UI avoids making color the sole carrier of meaning.
+
+### Accessibility practices
+
+* readable text labels for actions
+* explicit semantic names on important controls
+* large touch targets
+* high-contrast primary actions
+* text equivalents for status
+* reduced reliance on tiny icon-only controls
+* portrait-first layouts
+* clear offline/degraded states
+
+The architecture leaves room for future support for dynamic type, richer screen-reader hints, and user-level motion preferences.
+
+---
+
+# Offline-First Reliability
+
+A hackathon demo is often run in an imperfect environment. The mobile architecture therefore treats connectivity as a variable instead of a prerequisite.
+
+## Local snapshot
+
+The current Friendzone snapshot can be serialized and restored from local persistence.
 
 ```mermaid
 flowchart LR
-    Splash --> Onboarding
-    Onboarding --> Home
-    Home --> Lobby
-    Home --> Store
-    Home --> Profile
-    Home --> Leaderboard
-    Home --> Social
-    Lobby --> Game
-    Game --> Results
-    Results --> Home
-    Store --> IAP
-    Profile --> Settings
-    Profile --> NFTGallery
-    Social --> Friends
-    Social --> Parties
-    Social --> Chat
+    A[UI Action] --> B[Domain Reducer]
+    B --> C[Snapshot]
+    C --> D[AsyncStorage]
+    B --> E[Outbox Queue]
+    E --> F[Network Adapter]
+    F --> G[Server]
 ```
 
-### Redux State Structure
+### Why local-first matters
 
-```typescript
-interface RootState {
-  game: GameState;      // Match state, rope position, team power
-  player: PlayerState;  // Player ID, name, team, stats
-  level: LevelState;    // XP, level, progression
-  social: SocialState;  // Friends, parties, chat, feed
-  nft: NFTState;        // NFT ownership, staking, marketplace
-  web3: Web3State;      // Wallet connection, balances
-  ui: UIState;          // Loading, modals, theme
+Without local-first state, the failure sequence can look like:
+
+```text
+Network unavailable
+    ↓
+Room request fails
+    ↓
+Screen has no state
+    ↓
+Demo looks broken
+```
+
+With the current architecture:
+
+```text
+Network unavailable
+    ↓
+Local state remains available
+    ↓
+Network health is visible
+    ↓
+Actions can be queued where appropriate
+    ↓
+Core interaction remains demonstrable
+```
+
+---
+
+## Network Health
+
+The network model tracks:
+
+```ts
+export interface NetworkHealth {
+  state: "offline" | "degraded" | "online";
+  latencyMs: number | null;
+  lastSuccessAt: number | null;
+  retryCount: number;
+  reason: string | null;
 }
 ```
 
-### Performance Optimizations
-
-| Optimization | Implementation |
-|--------------|----------------|
-| **Memoization** | `React.memo`, `useMemo`, `useCallback` |
-| **Virtualized Lists** | `FlashList` for leaderboards and chat |
-| **Native Animations** | Reanimated 2 with native driver |
-| **Image Caching** | `react-native-fast-image` |
-| **Lazy Loading** | Code splitting with `React.lazy` |
-| **Throttling** | Touch input throttling (50ms) |
-| **Batch Updates** | Redux batch updates |
-| **InteractionManager** | Heavy tasks scheduled after interactions |
+This gives the UI a truthful status layer instead of making a failed request look like a frozen screen.
 
 ---
 
-## 🏛️ Decentraland Scene
+# Networking
 
-### Scene Architecture
+## API Boundary
 
-```mermaid
-flowchart TB
-    subgraph Scene["Decentraland Scene (SDK 7)"]
-        Entities["Entities (ECS)"]
-        UI["UI Overlay"]
-        Networking["Network (syncEntity)"]
-    end
+The mobile UI talks to a domain-level client boundary rather than directly knowing about transport details.
 
-    subgraph Components["Components"]
-        Transform["Transform"]
-        GltfContainer["GltfContainer"]
-        Animator["Animator"]
-        TextShape["TextShape"]
-        UiTransform["UiTransform"]
-    end
+That allows this migration path:
 
-    subgraph Systems["Systems"]
-        RopeSystem["Rope System"]
-        PlayerSystem["Player System"]
-        UISystem["UI System"]
-        SyncSystem["Sync System"]
-    end
-
-    Entities --> Components
-    Components --> Systems
-    Networking --> SyncSystem
-    UI --> UISystem
+```text
+Local demo adapter
+        ↓
+HTTP adapter
+        ↓
+tRPC router
+        ↓
+Production realtime service
 ```
 
-### Scene Integration
-
-The Decentraland scene provides the 3D arena environment while the mobile client handles the gameplay logic. The two communicate via the Colyseus game server:
-
-```mermaid
-flowchart LR
-    subgraph Decentraland["Decentraland Scene"]
-        Arena3D["3D Arena"]
-        Rope3D["3D Rope"]
-        PlayerAvatars["Player Avatars"]
-        UI3D["3D UI Overlay"]
-    end
-
-    subgraph Mobile["React Native Client"]
-        GameLogic["Game Logic"]
-        TouchInput["Touch Input"]
-        HUD["2D HUD"]
-    end
-
-    subgraph Server["Colyseus Server"]
-        Match["Match State"]
-    end
-
-    Mobile -->|WebSocket| Server
-    Decentraland -->|WebSocket| Server
-    Server -->|State Sync| Mobile
-    Server -->|State Sync| Decentraland
-```
+The current `network-client.ts` provides an optional HTTP implementation.
 
 ---
 
-## 🚀 Installation & Setup
+## tRPC Server Contract
 
-### Prerequisites
+The server uses Zod-backed procedure inputs.
 
-| Requirement | Version |
-|-------------|---------|
-| Node.js | 18+ |
-| npm or yarn | Latest |
-| Expo CLI | 49+ |
-| Hardhat | 2.x |
-| PostgreSQL | 15+ |
-| Redis | 7+ |
+Example room validation:
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/tug-of-war-arena.git
-cd tug-of-war-arena
+```ts
+const roomPlayerSchema = z.object({
+  id: z.string().min(1).max(80),
+  displayName: z.string().min(2).max(20),
+  team: z.enum(["sun", "moon"]),
+  status: z.enum(["online", "away", "offline"]).default("online"),
+  score: z.number().finite().default(0),
+  pulls: z.number().int().nonnegative().default(0),
+  streak: z.number().int().nonnegative().default(0),
+  ready: z.boolean().default(false),
+  lastSeenAt: z.number().int().nonnegative().default(0),
+});
 ```
 
-### 2. Install Dependencies
-
-```bash
-# Install all dependencies
-npm run install-all
-
-# Or individually:
-npm install                 # Client
-cd server && npm install    # Server
-cd contracts && npm install # Smart Contracts
-```
-
-### 3. Environment Configuration
-
-```bash
-# Copy environment templates
-cp .env.example .env
-cp server/.env.example server/.env
-cp contracts/.env.example contracts/.env
-
-# Edit .env files with your configuration
-```
-
-### 4. Database Setup
-
-```bash
-# Start PostgreSQL and Redis
-docker-compose up -d postgres redis
-
-# Run migrations
-cd server
-npx prisma migrate dev
-```
-
-### 5. Smart Contract Deployment
-
-```bash
-# Compile contracts
-cd contracts
-npx hardhat compile
-
-# Deploy to testnet
-npx hardhat run scripts/deploy.ts --network polygonAmoy
-```
-
-### 6. Start Development Servers
-
-```bash
-# Start game server
-cd server
-npm run dev
-
-# Start mobile client (in new terminal)
-npm start
-
-# Start Decentraland scene (optional)
-cd scene
-dcl start
-```
+This is preferable to trusting raw client input in a production architecture.
 
 ---
 
-## 📦 Deployment
+# Deep Links and World Bridging
 
-### Mobile App (Expo)
+Friendzone rooms are designed to be shareable.
 
-```bash
-# Build for iOS
-eas build --platform ios --profile production
+The bridge module converts room identity into a stable deep-link representation and parses it back into normalized state.
 
-# Build for Android
-eas build --platform android --profile production
+Conceptually:
 
-# Submit to stores
-eas submit --platform ios
-eas submit --platform android
+```text
+Create Room
+   ↓
+Room Code
+   ↓
+Deep Link
+   ↓
+Friend / World / Share Surface
+   ↓
+Open Mobile App
+   ↓
+Parse Code
+   ↓
+Join Flow
 ```
 
-### Game Server (Docker)
+The Android Expo configuration includes an app URL scheme and an intent-filter boundary for deep-link entry.
 
-```bash
-# Build Docker image
-docker build -t tug-of-war-server .
+This creates a practical future bridge between:
 
-# Run container
-docker run -p 2567:2567 -p 3000:3000 \
-  -e DATABASE_URL=postgresql://... \
-  -e REDIS_URL=redis://... \
-  tug-of-war-server
-```
-
-### Smart Contracts
-
-```bash
-# Deploy to mainnet
-npx hardhat run scripts/deploy.ts --network polygon
-
-# Verify on Etherscan/PolygonScan
-npx hardhat verify --network polygon <CONTRACT_ADDRESS>
-```
-
-### Decentraland Scene
-
-```bash
-# Build scene
-dcl build
-
-# Deploy to Decentraland
-dcl deploy
-```
+* mobile companion
+* Friendzone room
+* Decentraland world
+* invite/share surfaces
 
 ---
 
-## 🧪 Testing
+# Persistence and Migrations
 
-### Unit Tests
+The mobile snapshot is versionable.
 
-```bash
-# Client tests
-npm test
+The persistence layer includes migration support because app state should not become permanently coupled to the first schema that shipped.
 
-# Server tests
-cd server && npm test
+A simple migration strategy is:
 
-# Contract tests
-cd contracts && npx hardhat test
+```text
+Stored snapshot
+      ↓
+Parse / validate
+      ↓
+Detect version
+      ↓
+Run migrations
+      ↓
+Normalize
+      ↓
+Hydrate app
 ```
 
-### Integration Tests
-
-```bash
-# E2E tests (Detox)
-npm run test:e2e
-
-# API tests
-cd server && npm run test:api
-```
-
-### Performance Tests
-
-```bash
-# Load testing (Artillery)
-npm run test:load
-
-# FPS monitoring (in development)
-npm run perf:monitor
-```
+This matters for hackathon projects because local storage survives reloads and can otherwise make testing appear inconsistent after code changes.
 
 ---
 
-## 📁 Project Structure
+# Analytics and Telemetry
 
+The analytics layer is intentionally lightweight and local-friendly.
+
+Core events include concepts such as:
+
+* party creation
+* party join
+* pulls
+* reactions
+* match completion
+
+The purpose is to answer product questions:
+
+```text
+Can people enter a room?
+Can people start the game?
+Do they finish matches?
+Do they react?
+Do missions progress?
+Do they have a reason to rematch?
 ```
-tug-of-war-arena/
-├── src/                          # React Native mobile client
-│   ├── screens/                  # Screen components
-│   │   ├── HomeScreen.tsx
-│   │   ├── GameScreen.tsx
-│   │   ├── LobbyScreen.tsx
-│   │   ├── ResultsScreen.tsx
-│   │   ├── StoreScreen.tsx
-│   │   ├── ProfileScreen.tsx
-│   │   ├── LeaderboardScreen.tsx
-│   │   ├── SocialScreen.tsx
-│   │   ├── NFTGalleryScreen.tsx
-│   │   └── ...
-│   ├── components/               # Reusable UI components
-│   │   ├── ui/                   # Base UI components
-│   │   ├── game/                 # Game-specific components
-│   │   ├── social/               # Social components
-│   │   ├── nft/                  # NFT components
-│   │   └── effects/              # Visual effects
-│   ├── hooks/                    # Custom React hooks
-│   │   ├── useGameEngine.ts
-│   │   ├── useWeb3.ts
-│   │   ├── useTouchHandler.ts
-│   │   ├── useSocial.ts
-│   │   ├── useNFT.ts
-│   │   └── ...
-│   ├── store/                    # Redux store
-│   │   ├── slices/               # Redux slices
-│   │   │   ├── gameSlice.ts
-│   │   │   ├── playerSlice.ts
-│   │   │   ├── socialSlice.ts
-│   │   │   ├── levelSlice.ts
-│   │   │   └── ...
-│   │   └── index.ts
-│   ├── services/                 # Business logic services
-│   │   ├── GameClient.ts         # Colyseus client
-│   │   ├── Web3Service.ts        # Web3 interactions
-│   │   ├── SocialService.ts      # Social features
-│   │   ├── NFTService.ts         # NFT operations
-│   │   ├── IAPService.ts         # In-app purchases
-│   │   └── ...
-│   ├── web3/                     # Web3 integration
-│   │   ├── Web3Provider.tsx      # Wallet context
-│   │   ├── hooks/                # Web3 hooks
-│   │   └── contracts/            # Contract ABIs
-│   ├── styles/                   # Global styles
-│   ├── utils/                    # Utility functions
-│   ├── types/                    # TypeScript types
-│   └── constants/                # App constants
 
-├── server/                       # Colyseus game server
-│   ├── src/
-│   │   ├── rooms/                # Game rooms
-│   │   │   └── TugOfWarRoom.ts   # Main game room
-│   │   ├── handlers/             # Request handlers
-│   │   ├── models/               # Database models
-│   │   ├── services/             # Server services
-│   │   └── config/               # Server configuration
-│   ├── prisma/                   # Database schema
-│   └── package.json
+The telemetry module can also carry timing information for future network and performance instrumentation.
 
-├── contracts/                    # Smart contracts
-│   ├── contracts/
-│   │   ├── TugOfWarArena.sol     # Core game contract
-│   │   ├── PullToken.sol         # $PULL ERC-20 token
-│   │   ├── TugOfWarNFT.sol       # NFT collection
-│   │   ├── MysteryBox.sol        # VRF mystery box
-│   │   ├── NFTMarketplace.sol    # NFT marketplace
-│   │   └── ...
-│   ├── scripts/                  # Deployment scripts
-│   ├── test/                     # Contract tests
-│   └── hardhat.config.ts
+The architecture does **not** require a third-party analytics vendor for the core demo.
 
-├── scene/                        # Decentraland scene
-│   ├── src/
-│   │   ├── index.ts              # Scene entry point
-│   │   ├── game.ts               # Game logic
-│   │   ├── ui.ts                 # UI overlay
-│   │   └── assets/               # 3D assets
-│   ├── scene.json                # Scene manifest
-│   └── package.json
+---
 
-├── docker/                       # Docker configuration
-│   ├── docker-compose.yml
-│   └── Dockerfile
+# Performance Strategy
 
-├── docs/                         # Documentation
-│   ├── api/                      # API documentation
-│   ├── architecture/             # Architecture diagrams
-│   └── guides/                   # User guides
+Performance is important because the arena experience relies on frequent interaction and animation.
 
-├── .github/                      # GitHub Actions
-│   └── workflows/
-│       ├── build.yml
-│       └── deploy.yml
+The project includes performance helpers and bounded data structures to avoid accidental growth.
 
+## Bounded collections
+
+Examples include:
+
+* capped recent reactions
+* capped match results
+* capped activity history
+
+This avoids a common mobile failure mode:
+
+```text
+Session starts
+  ↓
+Every action appends permanently
+  ↓
+Snapshot grows forever
+  ↓
+Persistence becomes expensive
+  ↓
+Hydration slows down
+```
+
+The current design instead uses explicit limits.
+
+---
+
+## Render discipline
+
+The UI should prefer:
+
+* local state changes only where needed
+* stable callbacks
+* derived selectors instead of repeated calculation
+* bounded lists
+* simple primitives for high-frequency interaction
+
+Future optimization can add more aggressive memoization or a dedicated animation renderer without changing the domain layer.
+
+---
+
+# Security and Trust Boundaries
+
+The project is designed so that room/server inputs can be validated independently from presentation.
+
+Important trust boundaries include:
+
+### Client → Server
+
+Never trust:
+
+* player names
+* room codes
+* scores
+* pull deltas
+* player identifiers
+* readiness state
+
+The included server schema validates ranges and enum membership.
+
+### Local Storage
+
+Persisted data should be treated as user-controlled state and revalidated on hydration.
+
+### Production Multiplayer
+
+A production authoritative server should calculate:
+
+* legal pull deltas
+* rate limits
+* match progression
+* win conditions
+* timestamps
+* reward eligibility
+
+The current in-memory server is a prototype boundary, not a production anti-cheat system.
+
+---
+
+# Project Structure
+
+```text
+.
+├── app/
+│   ├── _layout.tsx
+│   └── (tabs)/
+│       ├── _layout.tsx
+│       ├── index.tsx
+│       └── friendzone.tsx
+│
+├── components/
+│   ├── friendzone/
+│   │   ├── FriendzoneHub.tsx
+│   │   ├── FriendzoneCard.tsx
+│   │   ├── Leaderboard.tsx
+│   │   ├── MatchRecap.tsx
+│   │   ├── MissionCard.tsx
+│   │   ├── MobileArena.tsx
+│   │   ├── NetworkHealthCard.tsx
+│   │   ├── PartyPanel.tsx
+│   │   ├── PresenceStrip.tsx
+│   │   ├── ReactionBar.tsx
+│   │   ├── RetentionCard.tsx
+│   │   └── StatPill.tsx
+│   │
+│   └── shared application components...
+│
+├── lib/
+│   ├── friendzone/
+│   │   ├── accessibility.ts
+│   │   ├── actions.ts
+│   │   ├── analytics.ts
+│   │   ├── bridge.ts
+│   │   ├── clock.ts
+│   │   ├── constants.ts
+│   │   ├── demo.ts
+│   │   ├── error.ts
+│   │   ├── feature-flags.ts
+│   │   ├── ids.ts
+│   │   ├── leaderboard.ts
+│   │   ├── migrations.ts
+│   │   ├── missions.ts
+│   │   ├── network-client.ts
+│   │   ├── network.ts
+│   │   ├── party.ts
+│   │   ├── performance.ts
+│   │   ├── profile.ts
+│   │   ├── queue.ts
+│   │   ├── reactions.ts
+│   │   ├── reducer.ts
+│   │   ├── retention.ts
+│   │   ├── scoring.ts
+│   │   ├── selectors.ts
+│   │   ├── share.ts
+│   │   ├── storage.ts
+│   │   ├── streaks.ts
+│   │   ├── telemetry.ts
+│   │   ├── types.ts
+│   │   └── validation.ts
+│   │
+│   ├── game-rules.ts
+│   ├── local-persistence.ts
+│   └── other original app modules...
+│
+├── server/
+│   ├── routers.ts
+│   ├── storage.ts
+│   └── _core/
+│
+├── tests/
+│   ├── friendzone/
+│   │   ├── missions.test.ts
+│   │   ├── party.test.ts
+│   │   ├── retention.test.ts
+│   │   ├── scoring.test.ts
+│   │   ├── streaks.test.ts
+│   │   └── validation.test.ts
+│   └── original project tests...
+│
+├── docs/
+│   ├── FRIENDZONE_UPGRADE_ARCHITECTURE.md
+│   ├── MOBILE_TEST_PLAN.md
+│   ├── IMPLEMENTATION_MATRIX.md
+│   ├── SUBMISSION_RUNBOOK.md
+│   ├── CODEBASE_INDEX.md
+│   └── runtime-notes.md
+│
+├── scripts/
 ├── package.json
-├── README.md
-└── LICENSE
+├── app.config.ts
+└── tsconfig.json
 ```
 
 ---
 
-## 🤝 Contributing
+# Important Files
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Workflow
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-
-- **TypeScript**: Strict mode enabled
-- **React**: Functional components with hooks
-- **Styling**: StyleSheet with dark theme
-- **Testing**: Jest for unit tests, Detox for E2E
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Decentraland Foundation** - For the Friendzone Mobile Buildathon
-- **DCL Regenesis Labs** - For organizing the buildathon and providing support
-- **Colyseus** - For the multiplayer game server framework
-- **OpenZeppelin** - For secure smart contract libraries
-- **Chainlink** - For VRF, Automation, and Price Feeds
+| File                                          | Responsibility                     |
+| --------------------------------------------- | ---------------------------------- |
+| `app/(tabs)/friendzone.tsx`                   | Friendzone route entry             |
+| `app/(tabs)/_layout.tsx`                      | Crew/Home tab registration         |
+| `components/friendzone/FriendzoneHub.tsx`     | Friendzone screen orchestration    |
+| `components/friendzone/MobileArena.tsx`       | One-thumb game surface             |
+| `components/friendzone/PartyPanel.tsx`        | Room creation/join/invite UI       |
+| `components/friendzone/PresenceStrip.tsx`     | Crew presence                      |
+| `components/friendzone/ReactionBar.tsx`       | Social reactions                   |
+| `components/friendzone/MissionCard.tsx`       | Daily missions                     |
+| `components/friendzone/MatchRecap.tsx`        | Match result presentation          |
+| `components/friendzone/Leaderboard.tsx`       | Social ranking presentation        |
+| `components/friendzone/NetworkHealthCard.tsx` | Connectivity state                 |
+| `components/friendzone/RetentionCard.tsx`     | Rematch/return loop                |
+| `lib/friendzone/reducer.ts`                   | Immutable domain state transitions |
+| `lib/friendzone/actions.ts`                   | Application commands               |
+| `lib/friendzone/scoring.ts`                   | Pull/scoring rules                 |
+| `lib/friendzone/streaks.ts`                   | Streak calculations                |
+| `lib/friendzone/missions.ts`                  | Mission progression                |
+| `lib/friendzone/party.ts`                     | Room/party primitives              |
+| `lib/friendzone/share.ts`                     | Invite sharing/copy                |
+| `lib/friendzone/bridge.ts`                    | Deep-link bridge                   |
+| `lib/friendzone/storage.ts`                   | Snapshot persistence               |
+| `lib/friendzone/network-client.ts`            | HTTP multiplayer boundary          |
+| `lib/friendzone/queue.ts`                     | Offline outbox                     |
+| `server/routers.ts`                           | tRPC room procedures               |
+| `tests/friendzone/*`                          | Deterministic domain tests         |
 
 ---
 
-## 📊 Project Metrics
+# Implementation Details
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Lines of Code | 50,000+ | ✅ |
-| Smart Contracts | 15+ | ✅ |
-| React Native Screens | 20+ | ✅ |
-| NFT Rarity Tiers | 6 | ✅ |
-| Achievement Badges | 50+ | ✅ |
-| Test Coverage | 80%+ | 🔄 |
-| FPS (Mobile) | 60 | ✅ |
+## FriendzoneHub
 
----
+`FriendzoneHub` acts as a UI orchestrator.
 
-## 🔗 Links
+Its responsibilities are intentionally product-level:
 
-- **Live Demo**: [Coming Soon]
-- **Documentation**: [docs.tugofwar.com]
-- **Discord**: [discord.gg/tugofwar]
-- **Twitter**: [@TugOfWarArena]
-- **DoraHacks Submission**: [dorahacks.io/tugofwar-arena]
+* hydrate the Friendzone snapshot
+* restore local state
+* seed a deterministic crew for the demo when needed
+* render the social surfaces
+* trigger party actions
+* launch the arena
+* persist state changes
+* show a human-readable status notice
+
+It delegates actual domain behavior to `lib/friendzone/*`.
 
 ---
 
-<div align="center">
+## Reducer-First State Changes
 
-**Built with ❤️ for the Decentraland Friendzone Mobile Buildathon**
+A representative state transformation looks like:
 
-[![Built with Expo](https://img.shields.io/badge/Built%20with-Expo-4630EB?style=flat-square&logo=expo)](https://expo.dev)
-[![Powered by Colyseus](https://img.shields.io/badge/Powered%20by-Colyseus-00CC88?style=flat-square)](https://colyseus.io)
-[![Built on Polygon](https://img.shields.io/badge/Built%20on-Polygon-8247E5?style=flat-square&logo=polygon)](https://polygon.technology)
+```ts
+export function dispatchReaction(
+  snapshot: FriendzoneSnapshot,
+  reaction: Reaction,
+): FriendzoneSnapshot {
+  analytics.track("reaction_sent", { reaction });
 
-</div>
+  return reduceFriendzone(snapshot, {
+    type: "reaction",
+    playerId: snapshot.profile.playerId,
+    reaction,
+    at: Date.now(),
+  });
+}
+```
+
+The important property is that the state transition is deterministic and testable without mounting React.
+
+---
+
+## Match Completion
+
+At the end of an arena round, the experience creates a `MatchResult` and updates:
+
+```text
+matches
+wins
+losses
+pulls
+best streak
+mission progress
+last active timestamp
+results history
+```
+
+That result is then displayed by `MatchRecap`.
+
+This gives the user immediate feedback about the outcome instead of silently changing counters in the background.
+
+---
+
+# Running Locally
+
+## Prerequisites
+
+Recommended environment:
+
+* Node.js 18+
+* pnpm 9+
+* Expo CLI tooling through the project scripts
+* iOS Simulator / Android Emulator for native testing, or a compatible Expo development workflow
+
+The current project declares `pnpm@9.12.0` in `package.json`.
+
+---
+
+## Install
+
+```bash
+pnpm install
+```
+
+---
+
+## Start development
+
+```bash
+pnpm dev
+```
+
+This runs the server and Metro processes together.
+
+For the mobile/web Metro experience directly:
+
+```bash
+pnpm dev:metro
+```
+
+For the backend directly:
+
+```bash
+pnpm dev:server
+```
+
+---
+
+## iOS
+
+```bash
+pnpm ios
+```
+
+## Android
+
+```bash
+pnpm android
+```
+
+---
+
+## Web
+
+The project is configured with Metro for web output.
+
+```bash
+pnpm dev:metro
+```
+
+Then use the Expo-provided development URL.
+
+---
+
+# Environment Configuration
+
+The project includes a small environment loader and an Expo config that resolves the app bundle/deep-link identity.
+
+The important production rule is:
+
+> **Never hard-code secrets into the application bundle.**
+
+Public configuration may be shipped to the client; private API keys, signing secrets, database credentials, and service tokens must remain server-side.
+
+---
+
+# Development Workflow
+
+A practical workflow for contributors is:
+
+```text
+1. Change domain rule
+2. Add/update deterministic test
+3. Update selector/action if required
+4. Update UI
+5. Run unit tests
+6. Run TypeScript check
+7. Run lint
+8. Test on portrait device
+9. Test offline transition
+10. Test the full demo loop
+```
+
+This prevents visual changes from accidentally changing game rules.
+
+---
+
+# Testing
+
+## Test strategy
+
+Tests are intentionally concentrated around deterministic business rules.
+
+Current Friendzone test areas include:
+
+```text
+tests/friendzone/missions.test.ts
+tests/friendzone/party.test.ts
+tests/friendzone/retention.test.ts
+tests/friendzone/scoring.test.ts
+tests/friendzone/streaks.test.ts
+tests/friendzone/validation.test.ts
+```
+
+The repository also retains the original project's broader test suite.
+
+---
+
+## Unit tests
+
+Run:
+
+```bash
+pnpm test
+```
+
+Or the Friendzone subset:
+
+```bash
+pnpm test:friendzone
+```
+
+---
+
+## TypeScript
+
+```bash
+pnpm check
+```
+
+---
+
+## Lint
+
+```bash
+pnpm lint
+```
+
+---
+
+## Full validation
+
+```bash
+pnpm validate:friendzone
+```
+
+The exact availability of all checks depends on local dependency installation and platform tooling.
+
+---
+
+# Mobile QA Checklist
+
+Before submitting a mobile experience, test the following on an actual phone where possible.
+
+## Navigation
+
+* [ ] App launches without a blank state
+* [ ] Home tab works
+* [ ] Crew tab works
+* [ ] Back navigation does not trap the user
+* [ ] Portrait layout remains readable
+
+## Social
+
+* [ ] Room code is visible
+* [ ] Copy invite works
+* [ ] Share action has a fallback
+* [ ] Presence renders correctly
+* [ ] Reactions register immediately
+
+## Gameplay
+
+* [ ] Team choice works
+* [ ] Arena opens
+* [ ] Pull button is easy to hit with one hand
+* [ ] Haptic interaction does not block gameplay
+* [ ] Match completion is obvious
+* [ ] Match recap is visible
+
+## Retention
+
+* [ ] Mission progress changes
+* [ ] Result history updates
+* [ ] Leaderboard shows a current-player row
+* [ ] Retention/rematch message appears
+
+## Reliability
+
+* [ ] Offline state is visible
+* [ ] Local snapshot restores after reload
+* [ ] Network failure does not produce an unexplained blank screen
+* [ ] Error state remains recoverable
+
+---
+
+# Production Multiplayer Path
+
+The current in-memory room implementation is deliberately small. A production build can replace it with an authoritative realtime service.
+
+Recommended architecture:
+
+```mermaid
+flowchart TD
+    M1[Mobile Client] --> WS[Realtime Gateway]
+    M2[Decentraland Client] --> WS
+    WS --> AUTH[Authentication]
+    WS --> MATCH[Matchmaker]
+    MATCH --> ROOM[Authoritative Room]
+    ROOM --> REDIS[Redis / Fast state]
+    ROOM --> DB[Persistent Database]
+    ROOM --> EVENT[Event Stream]
+```
+
+### Production responsibilities
+
+#### Matchmaker
+
+* find compatible players
+* group parties
+* balance teams
+* prevent duplicate joins
+
+#### Authoritative room
+
+* calculate legal pull deltas
+* apply time progression
+* evaluate win conditions
+* broadcast snapshots or patches
+* reject invalid actions
+
+#### Redis
+
+Useful for:
+
+* ephemeral room state
+* presence
+* queues
+* fast leaderboards
+* distributed locks
+
+#### Database
+
+Useful for:
+
+* profiles
+* match history
+* statistics
+* mission state
+* achievements
+* moderation logs
+
+---
+
+# Decentraland Integration Strategy
+
+The mobile project is designed around a clean boundary to a Decentraland experience.
+
+The intended architecture is:
+
+```mermaid
+flowchart LR
+    RN[React Native Mobile Companion]
+    WORLD[Decentraland World]
+    BRIDGE[Friendzone Bridge]
+    GAME[Authoritative Game Service]
+    SOCIAL[Social / Party Service]
+
+    RN <--> BRIDGE
+    WORLD <--> BRIDGE
+    RN <--> GAME
+    WORLD <--> GAME
+    RN <--> SOCIAL
+    WORLD <--> SOCIAL
+```
+
+The mobile app can provide:
+
+* quick invite entry
+* room discovery
+* mobile controls
+* social context
+* post-match progression
+
+The world can provide:
+
+* 3D arena presentation
+* avatars
+* spatial social interaction
+* in-world spectacle
+* world-based discovery
+
+This division keeps the mobile interaction optimized for touch while allowing the metaverse layer to remain visually rich.
+
+---
+
+# Demo Mode
+
+A hackathon environment benefits from a deterministic demo.
+
+The project therefore includes demo data and a reset action.
+
+## Demo seeding
+
+When the local room only contains the local player, the hub can seed a small deterministic crew representation.
+
+This prevents the most common empty-state demo failure:
+
+```text
+Judge opens app
+  ↓
+No backend connection
+  ↓
+No other players
+  ↓
+Empty lobby
+  ↓
+Nothing to show
+```
+
+Instead:
+
+```text
+Judge opens app
+  ↓
+Load local snapshot
+  ↓
+Seed recognizable crew state
+  ↓
+Show invite/presence/social signals
+  ↓
+Enter arena
+```
+
+This is presentation/demo data, not a claim that those users are real players.
+
+---
+
+# Hackathon Demo Script
+
+A strong short demo can fit in about a minute.
+
+### 0–10 seconds — Explain the mechanic
+
+Open Crew and say:
+
+> “This is a one-thumb tug-of-war game designed around social competition.”
+
+### 10–20 seconds — Show the room
+
+Point to:
+
+* room code
+* presence
+* reaction controls
+
+Say:
+
+> “Players can create a room, invite friends, and see the crew state before they start.”
+
+### 20–40 seconds — Play
+
+Choose a team and enter the arena.
+
+Demonstrate the large pull control and the streak feedback.
+
+### 40–50 seconds — Show the result
+
+Finish the match and immediately show:
+
+* winner
+* pulls
+* personal-best state
+* updated stats
+
+### 50–60 seconds — Show retention
+
+Scroll just far enough to show:
+
+* mission progress
+* leaderboard
+* rematch/return signal
+
+The narrative becomes:
+
+```text
+Game mechanic
+    +
+Social room
+    +
+Mobile interaction
+    +
+Progression
+    +
+Return loop
+```
+
+That is a much stronger product story than a standalone mini-game.
+
+---
+
+# Submission Positioning
+
+The public repository is positioned as:
+
+> **A mobile-first social tug-of-war experience with a modular Friendzone companion architecture.**
+
+The repository should clearly distinguish between:
+
+### Implemented in this codebase
+
+* Expo / React Native mobile experience
+* Crew social hub
+* room model and invite code flow
+* presence UI
+* reactions
+* mobile arena interaction
+* missions
+* result recap
+* leaderboard presentation
+* retention messaging
+* local persistence
+* network health state
+* deep-link primitives
+* optional tRPC room server
+* domain tests
+
+### Architecture prepared for production
+
+* realtime authoritative multiplayer
+* Redis room state
+* persistent player storage
+* richer social graph
+* scalable matchmaking
+* Decentraland world bridge
+
+### Future / roadmap
+
+* production matchmaking
+* real cross-device realtime synchronization
+* persistent social graph
+* anti-cheat infrastructure
+* reward contracts
+* richer Decentraland world systems
+* tournaments
+* cosmetics
+* seasonal content
+
+This separation is important for trustworthy open-source documentation.
+
+---
+
+# Limitations and Honest Scope
+
+This repository is a hackathon-oriented mobile build with a production-minded architecture, not a claim that every conceptual service is already deployed.
+
+### Current limitations
+
+1. The Friendzone server room state is in-memory.
+2. The local mobile experience is designed to remain usable even when multiplayer infrastructure is unavailable.
+3. The HTTP multiplayer adapter is a boundary for integration rather than proof of global-scale realtime infrastructure.
+4. Some broader systems described in earlier project concepts, such as blockchain rewards, NFTs, production matchmaking, and full social chat, should be treated as roadmap items unless independently implemented in the deployed submission.
+5. The React Native app should be presented alongside the actual eligible world/deployment experience where the hackathon rules require a world-based submission.
+
+Being explicit about these boundaries improves the credibility of the project.
+
+---
+
+# Roadmap
+
+## Phase 1 — Hackathon reliability
+
+* [x] Friendzone Crew tab
+* [x] Room code flow
+* [x] Social reactions
+* [x] Presence presentation
+* [x] One-thumb arena
+* [x] Missions
+* [x] Match recap
+* [x] Leaderboard presentation
+* [x] Retention prompt
+* [x] Local persistence
+* [x] Offline/network state
+* [x] Domain tests
+
+## Phase 2 — Realtime multiplayer
+
+* [ ] WebSocket/Colyseus or equivalent authoritative rooms
+* [ ] party matchmaking
+* [ ] real-time presence
+* [ ] authoritative pull validation
+* [ ] reconnect/resume
+* [ ] server-driven match timer
+
+## Phase 3 — Social graph
+
+* [ ] friend requests
+* [ ] crew membership
+* [ ] player profiles
+* [ ] activity feed
+* [ ] private/direct social channels
+* [ ] party history
+
+## Phase 4 — Decentraland world integration
+
+* [ ] world-side room discovery
+* [ ] in-world party portals
+* [ ] avatar-linked player identity
+* [ ] spatial reactions
+* [ ] shared world scoreboard
+* [ ] world/mobile handoff state
+
+## Phase 5 — Long-term engagement
+
+* [ ] seasonal competitions
+* [ ] tournaments
+* [ ] achievements
+* [ ] cosmetics
+* [ ] team banners
+* [ ] creator-generated arenas
+* [ ] richer progression systems
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+Before opening a pull request:
+
+```bash
+pnpm install
+pnpm test
+pnpm check
+pnpm lint
+```
+
+For gameplay changes, include a test covering the changed rule whenever practical.
+
+For UI changes, check portrait layouts and at least one real mobile device or simulator.
+
+### Suggested PR structure
+
+```text
+Problem
+
+What changed
+
+Why this architecture
+
+Testing performed
+
+Mobile QA performed
+
+Known limitations
+```
+
+---
+
+# License
+
+This project is licensed under the MIT License. See [`LICENSE`](LICENSE).
+
+---
+
+# Repository
+
+Primary GitHub repository:
+
+`https://github.com/lucylow/Tug-of-War-Arena`
+
+---
+
+# Final Architecture Summary
+
+The strongest way to think about this repository is not as “a tug-of-war button.”
+
+It is a small social game platform built around a highly legible mechanic.
+
+```mermaid
+flowchart TB
+    PLAYER[Player]
+    CREW[Crew / Party]
+    ARENA[Mobile Arena]
+    RESULT[Match Result]
+    MISSION[Mission Progress]
+    SOCIAL[Reactions + Presence]
+    RETENTION[Rematch / Return Loop]
+    WORLD[Decentraland World]
+
+    PLAYER --> CREW
+    CREW --> SOCIAL
+    CREW --> ARENA
+    ARENA --> RESULT
+    RESULT --> MISSION
+    RESULT --> RETENTION
+    SOCIAL --> RETENTION
+    RETENTION --> CREW
+    CREW <--> WORLD
+```
+
+The result is a product architecture with four clear layers:
+
+```text
+1. Touch interaction
+2. Competitive game state
+3. Social state
+4. Persistent return loop
+```
+
+That structure is the main value of the Friendzone upgrade: the project is designed not only to demonstrate a game mechanic, but to demonstrate a **social mobile experience that can grow into a connected metaverse game**.
