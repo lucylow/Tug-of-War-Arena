@@ -1,0 +1,22 @@
+{
+  "name": "tug-of-war-arena-scene",
+  "description": "Tug of War Arena 3D scene for the Decentraland Friendzone Buildathon",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "sdk-commands build",
+    "start": "sdk-commands start",
+    "start:mobile": "sdk-commands start",
+    "deploy": "sdk-commands deploy",
+    "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
+    "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next"
+  },
+  "devDependencies": {
+    "@dcl/js-runtime": "latest",
+    "@dcl/sdk": "latest"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

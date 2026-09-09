@@ -145,7 +145,7 @@ describe("Decentraland bridge recovery flow", () => {
 
     const diagnostics = openBridgeDiagnostics(fallback);
     expect(diagnostics.diagnosticsOpen).toBe(true);
-    expect(formatBridgeTimestamp(diagnostics.lastCheckedAt)).toMatch(/09:00:00/);
+    expect(formatBridgeTimestamp(diagnostics.lastCheckedAt)).toBe("21:00:00 UTC");
   });
 
   it("parses valid, malformed, and missing recovery reasons safely", () => {
@@ -776,6 +776,9 @@ describe("Decentraland bridge recovery flow", () => {
     expect(resolveBridgeTimestampRecovery("missing", null)).toEqual({ value: null, warning: false });
     expect(resolveBridgeTimestampRecovery("malformed", null)).toEqual({ value: null, warning: true });
     expect(resolveBridgeTimestampRecovery("unavailable", null)).toEqual({ value: null, warning: true });
+    expect(formatBridgeTimestamp(null)).toBe("Not checked yet");
+    expect(formatBridgeTimestamp("not-a-date")).toBe("Timestamp unavailable");
+    expect(formatBridgeTimestamp("2026-08-21T21:00:00.000Z")).toBe("21:00:00 UTC");
   });
 
   it("recovers persisted bridge reasons without committing invalid state", () => {

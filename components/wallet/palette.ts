@@ -1,0 +1,15 @@
+export const WALLET_COLORS = {
+  ink: "#11142B",
+  midnight: "#1D2150",
+  panel: "#252A5E",
+  gold: "#FFC857",
+  cloud: "#F5F7FF",
+  fog: "#A8B0D8",
+  mint: "#72F2B6",
+  coral: "#FF6B6B",
+  cyan: "#4DE7F2",
+  fox: "#F6851B",
+  polygon: "#8247E5",
+  ethereum: "#627EEA",
+  border: "#3A407A",
+} as const;

@@ -819,7 +819,10 @@ export function formatBridgeTimestamp(timestamp: string | null): string {
   if (!timestamp) return "Not checked yet";
   const parsed = new Date(timestamp);
   if (Number.isNaN(parsed.getTime())) return "Timestamp unavailable";
-  return parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const hours = String(parsed.getUTCHours()).padStart(2, "0");
+  const minutes = String(parsed.getUTCMinutes()).padStart(2, "0");
+  const seconds = String(parsed.getUTCSeconds()).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds} UTC`;
 }
 
 export type BridgeTimestampHydrationStatus = "missing" | "valid" | "malformed" | "unavailable";

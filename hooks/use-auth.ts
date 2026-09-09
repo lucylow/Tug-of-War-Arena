@@ -105,17 +105,24 @@ export function useAuth(options?: UseAuthOptions) {
         fetchUser();
       } else {
         // Native: check for cached user info first for faster initial load
-        Auth.getUserInfo().then((cachedUser) => {
-          console.log("[useAuth] Native cached user check:", cachedUser);
-          if (cachedUser) {
-            console.log("[useAuth] Native: setting cached user immediately");
-            setUser(cachedUser);
+        Auth.getUserInfo()
+          .then((cachedUser) => {
+            console.log("[useAuth] Native cached user check:", cachedUser);
+            if (cachedUser) {
+              console.log("[useAuth] Native: setting cached user immediately");
+              setUser(cachedUser);
+              setLoading(false);
+            } else {
+              fetchUser();
+            }
+          })
+          .catch((err) => {
+            const error = err instanceof Error ? err : new Error("Failed to read cached user");
+            console.error("[useAuth] Cached user lookup failed:", error);
+            setError(error);
+            setUser(null);
             setLoading(false);
-          } else {
-            // No cached user, check session token
-            fetchUser();
-          }
-        });
+          });
       }
     } else {
       console.log("[useAuth] autoFetch disabled, setting loading to false");

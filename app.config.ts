@@ -50,9 +50,10 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
-    "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      LSApplicationQueriesSchemes: ["metamask", "wc"],
+    },
   },
   android: {
     adaptiveIcon: {

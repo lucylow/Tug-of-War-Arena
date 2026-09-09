@@ -1,20 +1,24 @@
 import "dotenv/config";
 import express from "express";
+import type { NextFunction, Request, Response } from "express";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
+import { registerSocialRoutes } from "../socialRoutes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { parsePreferredPort } from "./listen-port";
+import { HttpError } from "../../shared/_core/errors";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer();
+    server.once("error", () => resolve(false));
     server.listen(port, () => {
-      server.close(() => resolve(true));
+      server.close((error) => resolve(!error));
     });
-    server.on("error", () => resolve(false));
   });
 }
 
@@ -25,6 +29,26 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
     }
   }
   throw new Error(`No available port found starting from ${startPort}`);
+}
+
+function handleApiError(err: unknown, _req: Request, res: Response, next: NextFunction) {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  if (err instanceof HttpError) {
+    res.status(err.statusCode).json({ error: err.message });
+    return;
+  }
+
+  if (err instanceof SyntaxError) {
+    res.status(400).json({ error: "Invalid JSON body" });
+    return;
+  }
+
+  console.error("[api] Unhandled error", err);
+  res.status(500).json({ error: "Internal server error" });
 }
 
 async function startServer() {
@@ -57,6 +81,7 @@ async function startServer() {
 
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  registerSocialRoutes(app);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
@@ -70,16 +95,26 @@ async function startServer() {
     }),
   );
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  app.use(handleApiError);
+
+  const preferredPort = parsePreferredPort(process.env.PORT);
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
+  server.on("error", (error) => {
+    console.error("[api] Failed to bind listening socket:", error);
+    process.exitCode = 1;
+  });
+
   server.listen(port, () => {
     console.log(`[api] server listening on port ${port}`);
   });
 }
 
-startServer().catch(console.error);
+startServer().catch((error) => {
+  console.error("[api] Server failed to start:", error);
+  process.exitCode = 1;
+});

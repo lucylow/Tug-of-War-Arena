@@ -1,14 +1,23 @@
-import { View, type ViewProps } from "react-native";
+import { type ReactNode } from "react";
+import { ScrollView, StyleSheet, View, type ViewProps } from "react-native";
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
+import { shouldSkipSafeArea, type ScreenInsetMode } from "@/lib/mobile";
 import { cn } from "@/lib/utils";
 
 export interface ScreenContainerProps extends ViewProps {
   /**
-   * SafeArea edges to apply. Defaults to ["top", "left", "right"].
-   * Bottom is typically handled by Tab Bar.
+   * SafeArea edges to apply. Defaults to all edges now that the in-app
+   * nav owns the bottom chrome instead of the Expo tab bar.
    */
   edges?: Edge[];
+  /**
+   * Decentraland-style inset mode.
+   * `device` (default) clears hardware notches; `none` is full-bleed;
+   * `interactable` keeps hardware insets in the companion (explorer chrome
+   * is applied only in a DCL scene via `screenInset: 'interactable'`).
+   */
+  screenInset?: ScreenInsetMode;
   /**
    * Tailwind className for the content area.
    */
@@ -21,6 +30,18 @@ export interface ScreenContainerProps extends ViewProps {
    * Additional className for the SafeAreaView (content layer).
    */
   safeAreaClassName?: string;
+  /**
+   * Scroll the main column so dense demo screens stay reachable on short phones.
+   */
+  scroll?: boolean;
+  /**
+   * Sticky chrome (tab bar, pull dock) that stays outside the scroll view.
+   */
+  footer?: ReactNode;
+  /**
+   * Full-screen overlays such as tutorials and countdowns.
+   */
+  overlay?: ReactNode;
 }
 
 /**
@@ -40,13 +61,42 @@ export interface ScreenContainerProps extends ViewProps {
  */
 export function ScreenContainer({
   children,
-  edges = ["top", "left", "right"],
+  edges = ["top", "bottom", "left", "right"],
+  screenInset = "device",
   className,
   containerClassName,
   safeAreaClassName,
+  scroll = false,
+  footer,
+  overlay,
   style,
   ...props
 }: ScreenContainerProps) {
+  const body = scroll ? (
+    <ScrollView
+      style={styles.flex}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    children
+  );
+
+  const content = (
+    <View style={styles.shell}>
+      <View className={cn("flex-1", className)}>{body}</View>
+      {footer}
+      {overlay ? (
+        <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+          {overlay}
+        </View>
+      ) : null}
+    </View>
+  );
+
   return (
     <View
       className={cn(
@@ -56,13 +106,25 @@ export function ScreenContainer({
       )}
       {...props}
     >
-      <SafeAreaView
-        edges={edges}
-        className={cn("flex-1", safeAreaClassName)}
-        style={style}
-      >
-        <View className={cn("flex-1", className)}>{children}</View>
-      </SafeAreaView>
+      {shouldSkipSafeArea(screenInset) ? (
+        <View className={cn("flex-1", safeAreaClassName)} style={style}>
+          {content}
+        </View>
+      ) : (
+        <SafeAreaView
+          edges={edges}
+          className={cn("flex-1", safeAreaClassName)}
+          style={style}
+        >
+          {content}
+        </SafeAreaView>
+      )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  shell: { flex: 1 },
+  scrollContent: { paddingBottom: 12, flexGrow: 1 },
+});

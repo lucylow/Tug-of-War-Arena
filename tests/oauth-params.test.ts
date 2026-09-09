@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { parseOAuthFallbackParams, readOAuthErrorParam } from "../lib/oauth-params";
+import {
+  decodeOAuthUserPayload,
+  parseOAuthFallbackParams,
+  readOAuthErrorParam,
+  readSingleSearchParam,
+} from "../lib/oauth-params";
 
 describe("OAuth fallback parameters", () => {
   it("decodes supported callback parameters from a relative URL", () => {
@@ -25,7 +30,24 @@ describe("OAuth fallback parameters", () => {
       "access_denied",
     );
     expect(readOAuthErrorParam("?error=cancelled")).toBe("cancelled");
+    expect(readOAuthErrorParam("?error=%20")).toBeNull();
     expect(readOAuthErrorParam("http://[")).toBeNull();
     expect(readOAuthErrorParam(null)).toBeNull();
+  });
+
+  it("normalizes duplicated or blank search params without throwing", () => {
+    expect(readSingleSearchParam("token-1")).toBe("token-1");
+    expect(readSingleSearchParam(["", " token-2 "])).toBe("token-2");
+    expect(readSingleSearchParam(["  ", ""])).toBeNull();
+    expect(readSingleSearchParam(undefined)).toBeNull();
+  });
+
+  it("decodes a valid user payload and ignores malformed base64", () => {
+    const encoded = Buffer.from(JSON.stringify({ openId: "player-1", name: "Sun Crew" })).toString(
+      "base64",
+    );
+    expect(decodeOAuthUserPayload(encoded)).toEqual({ openId: "player-1", name: "Sun Crew" });
+    expect(decodeOAuthUserPayload("%%%not-base64%%%")).toBeNull();
+    expect(decodeOAuthUserPayload("{")).toBeNull();
   });
 });

@@ -1,3 +1,5 @@
+import "react-native-get-random-values";
+import "@/lib/web3/polyfills";
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -7,7 +9,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
+import { setupMobileCompatibility } from "@/lib/mobile";
 import { ThemeProvider } from "@/lib/theme-provider";
+import { MetaMaskProvider } from "@/lib/web3/MetaMaskProvider";
 import { AppErrorBoundary } from "@/components/app-error-boundary";
 import {
   SafeAreaFrameContext,
@@ -23,6 +27,9 @@ import {
   initManusRuntime,
   subscribeSafeAreaInsets,
 } from "@/lib/_core/manus-runtime";
+import { fadeFromBottom, slideLeft } from "@/lib/navigation/transitions";
+import { DemoModeManager } from "@/lib/mock/DemoModeManager";
+import { DEFAULT_MOCK_SEED } from "@/lib/mock/seed";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -30,6 +37,8 @@ const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 export const unstable_settings = {
   anchor: "(tabs)",
 };
+
+setupMobileCompatibility(Platform.OS);
 
 export default function RootLayout() {
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
@@ -42,6 +51,12 @@ export default function RootLayout() {
   useEffect(() => {
     initManusRuntime();
     return () => disposeManusRuntime();
+  }, []);
+
+  useEffect(() => {
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      DemoModeManager.getInstance().enable(DEFAULT_MOCK_SEED);
+    }
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
@@ -63,8 +78,13 @@ export default function RootLayout() {
           queries: {
             // Disable automatic refetching on window focus for mobile
             refetchOnWindowFocus: false,
-            // Retry failed requests once
+            // Retry failed requests once, then keep the UI on fallback data
             retry: 1,
+            throwOnError: false,
+          },
+          mutations: {
+            retry: 0,
+            throwOnError: false,
           },
         },
       }),
@@ -87,18 +107,20 @@ export default function RootLayout() {
   const content = (
     <AppErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-          {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-          {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="oauth/callback" />
-          </Stack>
-          <StatusBar style="auto" />
-        </QueryClientProvider>
-      </trpc.Provider>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <MetaMaskProvider>
+              {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
+              {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
+              {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
+              <Stack screenOptions={{ headerShown: false, ...slideLeft }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="oauth/callback" options={fadeFromBottom} />
+              </Stack>
+              <StatusBar style="light" />
+            </MetaMaskProvider>
+          </QueryClientProvider>
+        </trpc.Provider>
       </GestureHandlerRootView>
     </AppErrorBoundary>
   );

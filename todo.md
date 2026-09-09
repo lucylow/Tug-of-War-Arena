@@ -1295,3 +1295,7 @@
 - [x] Expand deterministic synthetic social mock data for crew, presence, contacts, and leaderboard surfaces.
 - [x] Keep the expanded mock data local-only and compatible with existing Friendzone interactions.
 - [x] Run focused validation, verify portrait rendering, and save one checkpoint.
+
+- [x] Add a Friendzone smart-contract suite for match settlement, FZONE, wearables, badges, guilds, referrals, VRF, tournaments, and DAO governance.
+- [x] Keep high-frequency pulls off-chain and gate power/settle calls to the match operator.
+- [x] Add Hardhat tests, deploy scripts, and an offline-safe `lib/web3` client boundary.

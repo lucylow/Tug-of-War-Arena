@@ -36,4 +36,22 @@ describe("OAuth callback outcomes", () => {
       message: "Missing code or state parameter",
     });
   });
+
+  it("ignores blank or whitespace-only callback values", () => {
+    expect(
+      resolveOAuthCallbackOutcome({
+        error: "   ",
+        sessionToken: "token-1",
+        code: "code-1",
+        state: "state-1",
+      }),
+    ).toEqual({ kind: "session-token", sessionToken: "token-1" });
+    expect(
+      resolveOAuthCallbackOutcome({
+        sessionToken: "  ",
+        code: " code-1 ",
+        state: " state-1 ",
+      }),
+    ).toEqual({ kind: "exchange", code: "code-1", state: "state-1" });
+  });
 });

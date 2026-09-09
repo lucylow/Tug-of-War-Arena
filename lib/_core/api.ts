@@ -1,11 +1,7 @@
 import { Platform } from "react-native";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "./auth";
-
-type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-};
+import { parseApiJsonBody, readApiErrorMessage } from "@/lib/api-response";
 
 export async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
@@ -48,8 +44,12 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     });
 
     console.log("[API] Response status:", response.status, response.statusText);
-    const responseHeaders = Object.fromEntries(response.headers.entries());
-    console.log("[API] Response headers:", responseHeaders);
+    try {
+      const responseHeaders = Object.fromEntries(response.headers.entries());
+      console.log("[API] Response headers:", responseHeaders);
+    } catch {
+      // Header enumeration is diagnostic-only and unavailable on some runtimes.
+    }
 
     // Check if Set-Cookie header is present (cookies are automatically handled in React Native)
     const setCookie = response.headers.get("Set-Cookie");
@@ -60,26 +60,23 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[API] Error response:", errorText);
-      let errorMessage = errorText;
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.error || errorJson.message || errorText;
-      } catch {
-        // Not JSON, use text as is
-      }
-      throw new Error(errorMessage || `API call failed: ${response.statusText}`);
+      throw new Error(readApiErrorMessage(errorText, response.statusText));
     }
 
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      const data = await response.json();
-      console.log("[API] JSON response received");
-      return data as T;
+      try {
+        const data = await response.json();
+        console.log("[API] JSON response received");
+        return data as T;
+      } catch {
+        throw new Error("API returned an invalid JSON response");
+      }
     }
 
     const text = await response.text();
     console.log("[API] Text response received");
-    return (text ? JSON.parse(text) : {}) as T;
+    return parseApiJsonBody<T>(text);
   } catch (error) {
     console.error("[API] Request failed:", error);
     if (error instanceof Error) {
@@ -94,16 +91,16 @@ export async function apiCall<T>(endpoint: string, options: RequestInit = {}): P
 export async function exchangeOAuthCode(
   code: string,
   state: string,
-): Promise<{ sessionToken: string; user: any }> {
+): Promise<{ sessionToken: string; user: unknown }> {
   console.log("[API] exchangeOAuthCode called");
   // Use GET with query params
   const params = new URLSearchParams({ code, state });
   const endpoint = `/api/oauth/mobile?${params.toString()}`;
   console.log("[API] Calling OAuth mobile endpoint:", endpoint);
-  const result = await apiCall<{ app_session_id: string; user: any }>(endpoint);
+  const result = await apiCall<{ app_session_id?: unknown; user?: unknown }>(endpoint);
 
   // Convert app_session_id to sessionToken for compatibility
-  const sessionToken = result.app_session_id;
+  const sessionToken = typeof result.app_session_id === "string" ? result.app_session_id : "";
   console.log("[API] OAuth exchange result:", {
     hasSessionToken: !!sessionToken,
     hasUser: !!result.user,
@@ -133,8 +130,19 @@ export async function getMe(): Promise<{
   lastSignedIn: string;
 } | null> {
   try {
-    const result = await apiCall<{ user: any }>("/api/auth/me");
-    return result.user || null;
+    const result = await apiCall<{ user?: unknown }>("/api/auth/me");
+    const user = result.user;
+    if (!user || typeof user !== "object") return null;
+    const record = user as Record<string, unknown>;
+    if (typeof record.openId !== "string" || !record.openId) return null;
+    return {
+      id: typeof record.id === "number" && Number.isFinite(record.id) ? record.id : 0,
+      openId: record.openId,
+      name: typeof record.name === "string" ? record.name : null,
+      email: typeof record.email === "string" ? record.email : null,
+      loginMethod: typeof record.loginMethod === "string" ? record.loginMethod : null,
+      lastSignedIn: typeof record.lastSignedIn === "string" ? record.lastSignedIn : new Date().toISOString(),
+    };
   } catch (error) {
     console.error("[API] getMe failed:", error);
     return null;

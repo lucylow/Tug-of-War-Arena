@@ -6,10 +6,36 @@ export type OAuthFallbackParams = {
 
 const SUPPORTED_KEYS = new Set<keyof OAuthFallbackParams>(["code", "state", "sessionToken"]);
 
+export function readSingleSearchParam(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const normalized = readSingleSearchParam(item);
+      if (normalized) return normalized;
+    }
+  }
+  return null;
+}
+
 export function readOAuthErrorParam(url: string | null): string | null {
   if (!url) return null;
   try {
-    return new URL(url, "http://dummy").searchParams.get("error");
+    return readSingleSearchParam(new URL(url, "http://dummy").searchParams.get("error"));
+  } catch {
+    return null;
+  }
+}
+
+export function decodeOAuthUserPayload(encoded: string): unknown {
+  try {
+    const json =
+      typeof atob !== "undefined"
+        ? atob(encoded)
+        : Buffer.from(encoded, "base64").toString("utf-8");
+    return JSON.parse(json);
   } catch {
     return null;
   }

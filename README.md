@@ -49,6 +49,7 @@
 * [Mobile QA Checklist](#mobile-qa-checklist)
 * [Production Multiplayer Path](#production-multiplayer-path)
 * [Decentraland Integration Strategy](#decentraland-integration-strategy)
+* [3D Arena Scene](#3d-arena-scene)
 * [Demo Mode](#demo-mode)
 * [Hackathon Demo Script](#hackathon-demo-script)
 * [Submission Positioning](#submission-positioning)
@@ -86,7 +87,7 @@ The Friendzone-focused upgrade adds a complete **social companion layer** around
 * analytics and telemetry primitives
 * deterministic domain tests
 
-The architecture intentionally separates UI, domain logic, persistence, network access, and server concerns. The goal is to make the project easy to demonstrate today and easy to replace with production services later.
+The architecture intentionally separates UI, domain logic, persistence, network access, and server concerns. The goal is to make the project easy to demonstrate today and easy to replace with production services later. A Decentraland SDK 7 scene in `scene/` is the in-world spectacle layer for the same pull rules.
 
 ---
 
@@ -1105,6 +1106,14 @@ The current in-memory server is a prototype boundary, not a production anti-chea
 │   │
 │   └── shared application components...
 │
+├── contracts/                          # Hardhat workspace (FZONE, arena, NFTs, DAO)
+│   ├── src/core/
+│   ├── src/social/
+│   ├── src/randomness/
+│   ├── src/tournaments/
+│   ├── src/governance/
+│   └── README.md
+│
 ├── lib/
 │   ├── friendzone/
 │   │   ├── accessibility.ts
@@ -1140,12 +1149,21 @@ The current in-memory server is a prototype boundary, not a production anti-chea
 │   │
 │   ├── game-rules.ts
 │   ├── local-persistence.ts
+│   ├── web3/                   # Contract addresses + ABIs (offline-safe until deployed)
 │   └── other original app modules...
 │
 ├── server/
 │   ├── routers.ts
 │   ├── storage.ts
 │   └── _core/
+│
+├── scene/                              # Decentraland SDK 7 3D arena
+│   ├── src/index.ts
+│   ├── src/entities/
+│   ├── src/systems/
+│   ├── src/logic/
+│   ├── models/
+│   └── README.md
 │
 ├── tests/
 │   ├── friendzone/
@@ -1200,8 +1218,12 @@ The current in-memory server is a prototype boundary, not a production anti-chea
 | `lib/friendzone/storage.ts`                   | Snapshot persistence               |
 | `lib/friendzone/network-client.ts`            | HTTP multiplayer boundary          |
 | `lib/friendzone/queue.ts`                     | Offline outbox                     |
-| `server/routers.ts`                           | tRPC room procedures               |
+| `contracts/src/core/TugOfWarArena.sol`                | On-chain match staking and operator settlement |
+| `lib/web3/index.ts`                                   | Offline-safe ABI + address boundary            |
+| `scene/src/index.ts`                              | Decentraland SDK 7 arena bootstrap             |
+| `scene/src/logic/mapping.ts`                      | Pull-to-world mapping shared with tests        |
 | `tests/friendzone/*`                          | Deterministic domain tests         |
+| `tests/scene-visuals.test.ts`                 | 3D rope, HUD, and weather mapping  |
 
 ---
 
@@ -1339,6 +1361,24 @@ pnpm dev:metro
 ```
 
 Then use the Expo-provided development URL.
+
+---
+
+## Decentraland scene
+
+```bash
+cd scene
+npm install
+npm start
+```
+
+Or from the repository root, after the scene dependencies are installed:
+
+```bash
+pnpm scene:start
+```
+
+The 3D plaza is a 2×2 SDK 7 scene. It does not require the Expo app to preview. Click the floor pad or the on-screen **PULL** control to tug; **RESET** restarts the 30-second demo match.
 
 ---
 
@@ -1581,6 +1621,26 @@ The world can provide:
 
 This division keeps the mobile interaction optimized for touch while allowing the metaverse layer to remain visually rich.
 
+The Solidity suite in `contracts/` is the settlement and reward layer for that split: players join and stake FZONE on-chain, the mobile/tRPC loop remains the source of pull truth, and `TugOfWarArena` distributes prizes plus a VRF wearable after the operator posts the Sun/Moon result.
+
+---
+
+# 3D Arena Scene
+
+`scene/` is a production SDK 7 plaza that complements the portrait mobile client.
+
+It includes:
+
+* a neon Sun/Moon arena built from primitive meshes (GLB swap-in via `USE_GLB_ASSETS`)
+* a live spline rope driven by the same `-44…44` pull range as the mobile game
+* placeholder crew avatars with idle, tap, celebrate, and defeat motion
+* night skybox, one shadowed spotlight, and three point fills (parcel light cap)
+* `ParticleSystem` sparkles, torch fire, rain/snow/fog, and win fireworks
+* floating 3D HUD plus a 2D overlay (timer, score, power bars, Pull/Rematch)
+* a local demo session with a Colyseus-shaped transport boundary
+
+The mapping layer in `scene/src/logic` is SDK-free and covered by `tests/scene-visuals.test.ts`. Preview with `pnpm scene:start` (see `scene/README.md`).
+
 ---
 
 # Demo Mode
@@ -1712,6 +1772,7 @@ The repository should clearly distinguish between:
 * network health state
 * deep-link primitives
 * optional tRPC room server
+* Decentraland SDK 7 3D arena (rope, lighting, particles, HUD)
 * domain tests
 
 ### Architecture prepared for production
@@ -1729,11 +1790,11 @@ The repository should clearly distinguish between:
 * real cross-device realtime synchronization
 * persistent social graph
 * anti-cheat infrastructure
-* reward contracts
 * richer Decentraland world systems
-* tournaments
 * cosmetics
 * seasonal content
+
+Reward contracts (FZONE, wearables, operator-settled arena) and on-chain tournament brackets now live in `contracts/`.
 
 This separation is important for trustworthy open-source documentation.
 
@@ -1748,8 +1809,9 @@ This repository is a hackathon-oriented mobile build with a production-minded ar
 1. The Friendzone server room state is in-memory.
 2. The local mobile experience is designed to remain usable even when multiplayer infrastructure is unavailable.
 3. The HTTP multiplayer adapter is a boundary for integration rather than proof of global-scale realtime infrastructure.
-4. Some broader systems described in earlier project concepts, such as blockchain rewards, NFTs, production matchmaking, and full social chat, should be treated as roadmap items unless independently implemented in the deployed submission.
-5. The React Native app should be presented alongside the actual eligible world/deployment experience where the hackathon rules require a world-based submission.
+4. High-frequency pulls are not posted on-chain. The `contracts/` suite settles matches through a match operator (the game server). The Expo demo keeps minting optional until `lib/web3/addresses.ts` is populated from a deploy.
+5. The React Native app should be presented alongside the actual eligible world/deployment experience where the hackathon rules require a world-based submission. Preview that world from `scene/` with `npm start`.
+6. The 3D plaza simulates match state locally until a Colyseus (or equivalent) room is registered through `registerArenaTransport`.
 
 Being explicit about these boundaries improves the credibility of the project.
 
@@ -1771,6 +1833,7 @@ Being explicit about these boundaries improves the credibility of the project.
 * [x] Local persistence
 * [x] Offline/network state
 * [x] Domain tests
+* [x] Decentraland SDK 7 3D arena scene
 
 ## Phase 2 — Realtime multiplayer
 
@@ -1792,12 +1855,13 @@ Being explicit about these boundaries improves the credibility of the project.
 
 ## Phase 4 — Decentraland world integration
 
+* [x] 3D plaza, spline rope, crew avatars, lighting, and VFX (`scene/`)
 * [ ] world-side room discovery
 * [ ] in-world party portals
 * [ ] avatar-linked player identity
 * [ ] spatial reactions
 * [ ] shared world scoreboard
-* [ ] world/mobile handoff state
+* [ ] live Colyseus/mobile handoff into the scene
 
 ## Phase 5 — Long-term engagement
 

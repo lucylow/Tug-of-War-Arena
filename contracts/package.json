@@ -1,0 +1,34 @@
+{
+  "name": "tug-of-war-arena-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Friendzone Buildathon smart contracts for Tug of War Arena",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:core": "hardhat test test/FriendzoneSuite.test.ts",
+    "test:extensions": "hardhat test test/FriendzoneExtensions.test.ts",
+    "test:gamification": "hardhat test test/gamification/ExperienceSystem.test.ts test/gamification/Gamification.test.ts",
+    "test:social": "hardhat test test/social/SocialReputation.test.ts test/social/SocialSuite.test.ts test/social/SocialDeFi.test.ts",
+    "test:social-defi": "hardhat test test/social/SocialDeFi.test.ts",
+    "coverage": "hardhat coverage",
+    "deploy": "hardhat run scripts/deploy-gamification.ts",
+    "deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
+    "deploy:social": "hardhat run scripts/deploy-social.ts --network hardhat",
+    "deploy:social-defi": "hardhat run scripts/deploy-social-de-fi.ts --network hardhat",
+    "deploy:social-defi:amoy": "hardhat run scripts/deploy-social-de-fi.ts --network polygonAmoy",
+    "deploy:social-defi:polygon": "hardhat run scripts/deploy-social-de-fi.ts --network polygon",
+    "deploy:social:amoy": "hardhat run scripts/deploy-social.ts --network polygonAmoy",
+    "deploy:social:polygon": "hardhat run scripts/deploy-social.ts --network polygon",
+    "deploy:amoy": "hardhat run scripts/deploy-gamification.ts --network polygonAmoy",
+    "deploy:polygon": "hardhat run scripts/deploy-gamification.ts --network polygon"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.2.0",
+    "dotenv": "^16.4.7",
+    "hardhat": "^2.22.18",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

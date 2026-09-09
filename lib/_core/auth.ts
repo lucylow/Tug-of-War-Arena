@@ -1,15 +1,10 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { SESSION_TOKEN_KEY, USER_INFO_KEY } from "@/constants/oauth";
+import { parseStoredUser, type User } from "@/lib/auth-user";
 
-export type User = {
-  id: number;
-  openId: string;
-  name: string | null;
-  email: string | null;
-  loginMethod: string | null;
-  lastSignedIn: Date;
-};
+export type { User } from "@/lib/auth-user";
+export { parseStoredUser } from "@/lib/auth-user";
 
 export async function getSessionToken(): Promise<string | null> {
   try {
@@ -34,6 +29,10 @@ export async function getSessionToken(): Promise<string | null> {
 }
 
 export async function setSessionToken(token: string): Promise<void> {
+  if (typeof token !== "string" || token.trim().length === 0) {
+    throw new Error("Session token is empty");
+  }
+
   try {
     // Web platform uses cookie-based auth, no manual token management needed
     if (Platform.OS === "web") {
@@ -85,7 +84,11 @@ export async function getUserInfo(): Promise<User | null> {
       console.log("[Auth] No user info found");
       return null;
     }
-    const user = JSON.parse(info);
+    const user = parseStoredUser(JSON.parse(info));
+    if (!user) {
+      console.warn("[Auth] Stored user info is malformed; ignoring cache");
+      return null;
+    }
     console.log("[Auth] User info retrieved:", user);
     return user;
   } catch (error) {
