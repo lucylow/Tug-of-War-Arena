@@ -2,6 +2,7 @@ import { Linking, Platform } from "react-native";
 
 import { DAPP_METADATA, DEFAULT_HEX_CHAIN_ID, getSupportedNetworkMap } from "@/lib/web3/config";
 import { getInjectedProvider } from "@/lib/web3/detect";
+import { toWalletError } from "@/lib/web3/errors";
 import type { Eip1193Like } from "@/lib/web3/types";
 
 type MetaMaskClient = {
@@ -63,7 +64,8 @@ export async function getLiveProvider(): Promise<Eip1193Like | null> {
   const client = await getMetaMaskClient();
   try {
     return client?.getProvider() ?? null;
-  } catch {
+  } catch (error) {
+    console.warn("MetaMask provider is unavailable:", error);
     return null;
   }
 }
@@ -76,7 +78,15 @@ export async function connectLiveSession(chainId = DEFAULT_HEX_CHAIN_ID): Promis
   const client = await getMetaMaskClient();
   if (client) {
     const result = await client.connect({ chainIds: [chainId] });
-    return { ...result, provider: client.getProvider() };
+    let provider: Eip1193Like | null = null;
+    try {
+      provider = client.getProvider();
+    } catch {
+      provider = null;
+    }
+    if (!provider) throw new Error("MetaMask is not available on this device.");
+    if (!result.accounts?.[0]) throw new Error("No accounts returned");
+    return { ...result, provider };
   }
 
   const provider = getInjectedProvider();
@@ -84,18 +94,25 @@ export async function connectLiveSession(chainId = DEFAULT_HEX_CHAIN_ID): Promis
     throw new Error("MetaMask is not available on this device.");
   }
   const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+  if (!Array.isArray(accounts) || !accounts[0]) {
+    throw new Error("No accounts returned");
+  }
   const rawChainId = (await provider.request({ method: "eth_chainId" })) as string;
   return { accounts, chainId: rawChainId, provider };
 }
 
 export async function disconnectLiveSession(): Promise<void> {
-  const client = await getMetaMaskClient();
-  if (!client) return;
-  if (typeof client.disconnect === "function") {
-    await client.disconnect();
-    return;
-  }
-  if (typeof client.terminate === "function") {
-    await client.terminate();
+  try {
+    const client = await getMetaMaskClient();
+    if (!client) return;
+    if (typeof client.disconnect === "function") {
+      await client.disconnect();
+      return;
+    }
+    if (typeof client.terminate === "function") {
+      await client.terminate();
+    }
+  } catch {
+    // Local wallet state can still clear.
   }
 }
