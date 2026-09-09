@@ -35,8 +35,21 @@ export function createArena(): Entity {
     })
 
     const railHeight = 0.55
-    box(arena, { x: 0, y: railHeight, z: -10.4 }, { x: 28, y: 1.1, z: 0.35 }, midnight, { collider: true })
-    box(arena, { x: 0, y: railHeight, z: 10.4 }, { x: 28, y: 1.1, z: 0.35 }, midnight, { collider: true })
+    const gateWidth = 5.2
+    const wallWidth = (28 - gateWidth) / 2
+    const wallOffset = gateWidth / 2 + wallWidth / 2
+    box(arena, { x: -wallOffset, y: railHeight, z: -10.4 }, { x: wallWidth, y: 1.1, z: 0.35 }, midnight, {
+      collider: true,
+    })
+    box(arena, { x: wallOffset, y: railHeight, z: -10.4 }, { x: wallWidth, y: 1.1, z: 0.35 }, midnight, {
+      collider: true,
+    })
+    box(arena, { x: -wallOffset, y: railHeight, z: 10.4 }, { x: wallWidth, y: 1.1, z: 0.35 }, midnight, {
+      collider: true,
+    })
+    box(arena, { x: wallOffset, y: railHeight, z: 10.4 }, { x: wallWidth, y: 1.1, z: 0.35 }, midnight, {
+      collider: true,
+    })
     box(arena, { x: -13.8, y: railHeight, z: 0 }, { x: 0.35, y: 1.1, z: 20.8 }, midnight, { collider: true })
     box(arena, { x: 13.8, y: railHeight, z: 0 }, { x: 0.35, y: 1.1, z: 20.8 }, midnight, { collider: true })
 

@@ -1,8 +1,9 @@
-import { ParticleSystem as DclParticleSystem, ParticleSystemBlendMode, ParticleSystemPlaybackState } from '@dcl/sdk/ecs'
+import { ParticleSystem as DclParticleSystem } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { ARENA_CENTER } from '../logic/mapping'
+import { ParticleBlend, ParticlePlayback } from '../logic/particleEnums'
 import { gold, mint, moon, sun } from '../palette'
 import { ParticleSystem, type ParticleConfig } from './ParticleSystem'
 import { CONFETTI_COUNT, confettiPieceCount } from './budgets'
@@ -40,7 +41,7 @@ export class ConfettiEffect extends ParticleSystem {
     this.colors = colors && colors.length > 0 ? colors : DEFAULT_COLORS
     this.init()
     if (this.entity && DclParticleSystem.has(this.entity)) {
-      DclParticleSystem.getMutable(this.entity).playbackState = ParticleSystemPlaybackState.PS_STOPPED
+      DclParticleSystem.getMutable(this.entity).playbackState = ParticlePlayback.STOPPED
     }
   }
 
@@ -59,7 +60,7 @@ export class ConfettiEffect extends ParticleSystem {
         start: Color4.create(1, 1, 1, 1),
         end: Color4.create(1, 1, 1, 0),
       },
-      blendMode: ParticleSystemBlendMode.PSB_ADD,
+      blendMode: ParticleBlend.ADD,
       loop: false,
     })
   }
@@ -85,7 +86,7 @@ export class ConfettiEffect extends ParticleSystem {
       values: [{ time: 0, count: pieces, cycles: 1, interval: 0, probability: 1 }],
     }
     particle.loop = false
-    particle.playbackState = ParticleSystemPlaybackState.PS_PLAYING
+    particle.playbackState = ParticlePlayback.PLAYING
   }
 
   update(dt: number): void {
@@ -94,7 +95,7 @@ export class ConfettiEffect extends ParticleSystem {
     if (this.elapsed >= this.duration) {
       this.playing = false
       if (this.entity && DclParticleSystem.has(this.entity)) {
-        DclParticleSystem.getMutable(this.entity).playbackState = ParticleSystemPlaybackState.PS_STOPPED
+        DclParticleSystem.getMutable(this.entity).playbackState = ParticlePlayback.STOPPED
       }
       this.onComplete?.()
     }

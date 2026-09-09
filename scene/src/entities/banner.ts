@@ -39,7 +39,6 @@ export function createBanner(position: Vector3, team: TeamAlias): BannerHandle {
     Animator.create(root, {
       states: [
         {
-          name: 'sway',
           clip: 'sway',
           playing: true,
           loop: true,

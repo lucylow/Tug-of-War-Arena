@@ -5,7 +5,7 @@
  * Mobile interactable band: x 30%–75%, y 8%–92%.
  */
 export function getSocialOverlayLayout(isOnMobile: boolean) {
-  const size = isOnMobile ? 48 : 40;
+  const size = isOnMobile ? 56 : 40;
   return {
     leftPercent: isOnMobile ? 62 : 72,
     topPercent: isOnMobile ? 10 : 22,

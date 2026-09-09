@@ -1,7 +1,8 @@
-import type { ArenaVisualState } from '../logic/snapshot'
+import type { CrewId, WeatherKind } from '../logic/mapping'
+import { shouldAcceptPull, shouldAcceptRematch, toWorldPhase } from '../logic/round'
+import type { ArenaVisualInput, ArenaVisualState } from '../logic/snapshot'
 import { applyVisualSnapshot, createDemoSnapshot, demoSinePull, stepDemoSnapshot } from '../logic/snapshot'
-import type { ArenaVisualInput } from '../logic/snapshot'
-import type { WeatherKind } from '../logic/mapping'
+import type { WorldBridgeEvent } from '../logic/worldBridge'
 import { resetCombo } from '../vfx/comboState'
 
 export type SceneSession = {
@@ -10,6 +11,8 @@ export type SceneSession = {
   pendingTaps: number
   lastWinnerCelebrated: boolean
   manualControl: boolean
+  playerCrew: CrewId | null
+  playerName: string
 }
 
 export const session: SceneSession = {
@@ -18,11 +21,29 @@ export const session: SceneSession = {
   pendingTaps: 0,
   lastWinnerCelebrated: false,
   manualControl: false,
+  playerCrew: null,
+  playerName: 'Visitor',
 }
 
 export function queueTap(count: number = 1) {
+  if (!shouldAcceptPull(toWorldPhase(session.state.phase))) return
   session.pendingTaps += Math.max(0, count)
   session.manualControl = true
+}
+
+export function applyWorldBridgeEvent(event: WorldBridgeEvent) {
+  if (event.type === 'pull') {
+    queueTap(event.amount)
+    return
+  }
+  if (event.type === 'join') {
+    session.playerCrew = event.crew
+    session.playerName = event.name ?? 'Visitor'
+    return
+  }
+  if (event.type === 'rematch') {
+    if (shouldAcceptRematch(toWorldPhase(session.state.phase))) restartMatch()
+  }
 }
 
 export function applyRemoteState(input: ArenaVisualInput) {
@@ -39,7 +60,7 @@ export function cycleWeather(): WeatherKind {
 
 export function restartMatch() {
   const score = session.state.score
-  session.state = createDemoSnapshot({ score, weather: session.state.weather })
+  session.state = createDemoSnapshot({ score, weather: session.state.weather, phase: 'lobby' })
   session.elapsed = 0
   session.pendingTaps = 0
   session.lastWinnerCelebrated = false
@@ -51,6 +72,14 @@ export function tickSession(dt: number, useSine: boolean) {
   session.elapsed += dt
   const taps = session.pendingTaps
   session.pendingTaps = 0
+  const worldPhase = toWorldPhase(session.state.phase)
+  if (useSine && !session.manualControl && taps === 0 && worldPhase === 'lobby') {
+    session.state = {
+      ...session.state,
+      pull: demoSinePull(session.elapsed, 6),
+    }
+    return session.state
+  }
   if (useSine && !session.manualControl && session.state.phase === 'live' && taps === 0) {
     session.state = {
       ...session.state,

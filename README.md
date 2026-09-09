@@ -743,14 +743,28 @@ The interaction is intended to feel immediate:
 ```text
 Touch
   ↓
-Haptic feedback
+Haptic budget (throttled)
   ↓
-Pull state
+Pull rate gate (70ms)
+  ↓
+Friendzone pull state
+  ↓
+Reanimated rope / press
   ↓
 Streak feedback
-  ↓
-Rope movement
 ```
+
+The 136pt `PullControl` is the one-thumb primary. Existing screens can keep:
+
+```tsx
+import { MobileArena } from "@/components/MobileArena";
+```
+
+`MobileArena.tsx` re-exports `EnhancedMobileArena`, which applies Friendzone `lib/game-rules` rather than replacing them. High-frequency visual feedback runs in Reanimated; pull, reaction, surge, and haptic bursts are budgeted in `lib/mobile-ux`.
+
+See `docs/MOBILE_UX_TOUCH_PERFORMANCE_25_PLUS_PAGES.md` for the full module map, and `docs/MOBILE_UX_TOUCH_PERFORMANCE_PATCH_NOTES.md` for what landed in this pass.
+
+Development-only playground: `app/dev/mobile-ux-lab.tsx`.
 
 ---
 
@@ -1148,6 +1162,7 @@ The current in-memory server is a prototype boundary, not a production anti-chea
 │   │   └── validation.ts
 │   │
 │   ├── game-rules.ts
+│   ├── mobile-ux/              # Touch geometry, haptic/pull budgets, visibility FPS
 │   ├── local-persistence.ts
 │   ├── web3/                   # Contract addresses + ABIs (offline-safe until deployed)
 │   └── other original app modules...
@@ -1222,8 +1237,14 @@ The current in-memory server is a prototype boundary, not a production anti-chea
 | `lib/web3/index.ts`                                   | Offline-safe ABI + address boundary            |
 | `scene/src/index.ts`                              | Decentraland SDK 7 arena bootstrap             |
 | `scene/src/logic/mapping.ts`                      | Pull-to-world mapping shared with tests        |
-| `tests/friendzone/*`                          | Deterministic domain tests         |
-| `tests/scene-visuals.test.ts`                 | 3D rope, HUD, and weather mapping  |
+| `components/MobileArena.tsx`                  | Re-export of EnhancedMobileArena   |
+| `components/mobile/EnhancedMobileArena.tsx`   | One-thumb arena with budgets       |
+| `components/mobile/PullControl.tsx`           | 136pt PULL control                 |
+| `lib/mobile-ux/index.ts`                      | Touch, throttle, haptic, FPS APIs  |
+| `app/dev/mobile-ux-lab.tsx`                   | Development-only Mobile UX Lab     |
+| `tests/mobile-ux-touch.test.ts`               | Touch geometry                     |
+| `tests/mobile-ux-throttle.test.ts`            | Pull/reaction/haptic gates         |
+| `docs/MOBILE_UX_TOUCH_PERFORMANCE_25_PLUS_PAGES.md` | Implementation guide          |
 
 ---
 
@@ -1378,7 +1399,9 @@ Or from the repository root, after the scene dependencies are installed:
 pnpm scene:start
 ```
 
-The 3D plaza is a 2×2 SDK 7 scene. It does not require the Expo app to preview. Click the floor pad or the on-screen **PULL** control to tug; **RESET** restarts the 30-second demo match.
+To load the plaza in the **Decentraland mobile app**, put the phone on the same Wi-Fi and run `pnpm scene:start:mobile`, then scan the QR code. See `scene/README.md` for the mobile HUD, lighting, and input notes.
+
+The 3D plaza is a 2×2 SDK 7 scene. It does not require the Expo app to preview. Tap the floor pad or the on-screen **PULL** control to tug; **RESET** restarts the 30-second demo match.
 
 ---
 
@@ -1432,7 +1455,14 @@ tests/friendzone/streaks.test.ts
 tests/friendzone/validation.test.ts
 ```
 
-The repository also retains the original project's broader test suite.
+The repository also retains the original project's broader test suite, including mobile UX/touch/performance:
+
+```text
+tests/mobile-ux-touch.test.ts
+tests/mobile-ux-throttle.test.ts
+tests/mobile-ux-performance.test.ts
+tests/mobile-compatibility.test.ts
+```
 
 ---
 
@@ -1631,15 +1661,17 @@ The Solidity suite in `contracts/` is the settlement and reward layer for that s
 
 It includes:
 
-* a neon Sun/Moon arena built from primitive meshes (GLB swap-in via `USE_GLB_ASSETS`)
+* a neon Sun/Moon arena with an entrance gate, crew pads, raised bases, pull/rematch pads, Friendzone board, and portals
+* an in-world **DAO Governance Plaza** (proposal pedestals, workflow board, official DAO/Forum terminals)
 * a live spline rope driven by the same `-44…44` pull range as the mobile game
+* lobby → active → finished rounds, with MessageBus events and a mobile `worldBridge` contract
 * placeholder crew avatars with idle, tap, celebrate, and defeat motion
 * night skybox, one shadowed spotlight, and three point fills (parcel light cap)
-* `ParticleSystem` sparkles, torch fire, rain/snow/fog, and win fireworks
-* floating 3D HUD plus a 2D overlay (timer, score, power bars, Pull/Rematch)
+* `ParticleSystem` sparkles, torch fire, rain/snow/fog, win fireworks, and one ambient cloud/sparkle system
+* floating 3D HUD (title, status, timer, score, power bars) plus a 2D overlay
 * a local demo session with a Colyseus-shaped transport boundary
 
-The mapping layer in `scene/src/logic` is SDK-free and covered by `tests/scene-visuals.test.ts`. Preview with `pnpm scene:start` (see `scene/README.md`).
+Replace `YOUR-NAME.dcl.eth` in `scene/scene.json` before a Worlds deploy. The mapping layer in `scene/src/logic` is SDK-free and covered by `tests/scene-visuals.test.ts` and `tests/scene-world.test.ts`. Governance domain logic is covered by `tests/scene-governance.test.ts`. Preview with `pnpm scene:start` (see `scene/README.md`).
 
 ---
 
@@ -1682,6 +1714,8 @@ Enter arena
 ```
 
 This is presentation/demo data, not a claim that those users are real players.
+
+The hybrid 2D + 3D demo universe in `lib/hybrid-world` (mobile companion) and `scene/src/hybrid` (Decentraland World) shares one seeded dataset. Walk through it with [docs/HYBRID_2D_3D_DEMO_RUNBOOK.md](docs/HYBRID_2D_3D_DEMO_RUNBOOK.md).
 
 ---
 
@@ -1772,7 +1806,7 @@ The repository should clearly distinguish between:
 * network health state
 * deep-link primitives
 * optional tRPC room server
-* Decentraland SDK 7 3D arena (rope, lighting, particles, HUD)
+* Decentraland SDK 7 3D arena (rope, lighting, particles, HUD, DAO Governance Plaza)
 * domain tests
 
 ### Architecture prepared for production
@@ -1812,6 +1846,7 @@ This repository is a hackathon-oriented mobile build with a production-minded ar
 4. High-frequency pulls are not posted on-chain. The `contracts/` suite settles matches through a match operator (the game server). The Expo demo keeps minting optional until `lib/web3/addresses.ts` is populated from a deploy.
 5. The React Native app should be presented alongside the actual eligible world/deployment experience where the hackathon rules require a world-based submission. Preview that world from `scene/` with `npm start`.
 6. The 3D plaza simulates match state locally until a Colyseus (or equivalent) room is registered through `registerArenaTransport`.
+7. The DAO Governance Plaza is a discovery/education layer. Binding votes stay on [governance.decentraland.org](https://governance.decentraland.org/); the scene does not hold keys or cast votes.
 
 Being explicit about these boundaries improves the credibility of the project.
 

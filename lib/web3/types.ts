@@ -41,3 +41,11 @@ export type ArenaPlayerStats = {
 };
 
 export type WalletTxStatus = "idle" | "pending" | "success" | "error";
+
+export type ArenaTxResult = {
+  hash: string;
+  matchId: string;
+  view?: ArenaMatchView;
+  mock?: boolean;
+  approved?: boolean;
+};

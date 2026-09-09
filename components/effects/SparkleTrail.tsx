@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
+import { hideFromA11y } from "@/lib/a11y";
 import { ARENA_COLORS, DEFAULT_SPARKLE_COUNT, createSparkles, fxParticlePose, type FxParticle } from "@/lib/animations";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
@@ -28,7 +29,7 @@ const SparkleDot = memo(function SparkleDot({ particle }: { particle: FxParticle
     };
   });
 
-  return <Animated.View pointerEvents="none" style={[styles.dot, style]} />;
+  return <Animated.View style={[styles.dot, style]} />;
 });
 
 export interface SparkleTrailProps {
@@ -53,12 +54,7 @@ export const SparkleTrail = memo(function SparkleTrail({
   if (!active || reduceMotion || sparkles.length === 0) return null;
 
   return (
-    <View
-      pointerEvents="none"
-      style={styles.layer}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
+    <View style={styles.layer} {...hideFromA11y()}>
       {sparkles.map((sparkle) => (
         <SparkleDot key={sparkle.id} particle={sparkle} />
       ))}
@@ -74,8 +70,10 @@ const styles = StyleSheet.create({
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
     zIndex: 26,
+    pointerEvents: "none",
   },
   dot: {
     position: "absolute",
+    pointerEvents: "none",
   },
 });

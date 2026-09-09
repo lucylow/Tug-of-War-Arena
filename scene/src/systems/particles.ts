@@ -1,15 +1,15 @@
 import {
   Entity,
   ParticleSystem,
-  ParticleSystemBlendMode,
-  ParticleSystemPlaybackState,
   Transform,
   engine,
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { ARENA_CENTER } from '../logic/mapping'
+import { ParticleBlend, ParticlePlayback, type ParticleBlendMode } from '../logic/particleEnums'
 import { gold, moon, sun } from '../palette'
+import { SceneErrorHandler } from './errorHandling'
 import { registerQualityParticle } from './quality'
 
 const emitters: Entity[] = []
@@ -36,7 +36,7 @@ function fire(position: Vector3, color: Color4): Entity {
     sizeOverTime: { start: 1, end: 0.2 },
     initialColor: { start: color, end: gold },
     colorOverTime: { start: Color4.create(color.r, color.g, color.b, 0.9), end: Color4.create(0.1, 0, 0, 0) },
-    blendMode: ParticleSystemBlendMode.PSB_ADD,
+    blendMode: ParticleBlend.ADD,
   })
 }
 
@@ -53,7 +53,7 @@ export function burstPowerSurge(team: 'sun' | 'moon') {
     initialSize: { start: 0.08, end: 0.14 },
     initialColor: { start: team === 'sun' ? sun : moon, end: gold },
     colorOverTime: { start: Color4.create(1, 1, 1, 0.9), end: Color4.create(1, 1, 1, 0) },
-    blendMode: ParticleSystemBlendMode.PSB_ADD,
+    blendMode: ParticleBlend.ADD,
     loop: false,
     bursts: {
       values: [{ time: 0, count: 36, cycles: 1, interval: 0, probability: 1 }],
@@ -75,7 +75,7 @@ type EmitterConfig = {
   sizeOverTime?: { start: number; end: number }
   initialColor?: { start: Color4; end: Color4 }
   colorOverTime?: { start: Color4; end: Color4 }
-  blendMode?: ParticleSystemBlendMode
+  blendMode?: ParticleBlendMode
   loop?: boolean
   bursts?: { values: Array<{ time: number; count: number; cycles: number; interval: number; probability: number }> }
 }
@@ -86,28 +86,32 @@ function emitter(config: EmitterConfig): Entity {
     position: config.position,
     rotation: config.rotation ?? Quaternion.fromEulerDegrees(0, 0, 0),
   })
-  ParticleSystem.create(entity, {
-    shape: config.shape,
-    rate: config.rate,
-    maxParticles: config.maxParticles,
-    lifetime: config.lifetime,
-    gravity: config.gravity ?? 0,
-    initialVelocitySpeed: config.initialVelocitySpeed,
-    initialSize: config.initialSize,
-    sizeOverTime: config.sizeOverTime,
-    initialColor: config.initialColor,
-    colorOverTime: config.colorOverTime,
-    blendMode: config.blendMode ?? ParticleSystemBlendMode.PSB_ALPHA,
-    loop: config.loop ?? true,
-    bursts: config.bursts,
-    billboard: true,
-  })
-  registerQualityParticle(entity)
+  try {
+    ParticleSystem.create(entity, {
+      shape: config.shape,
+      rate: config.rate,
+      maxParticles: config.maxParticles,
+      lifetime: config.lifetime,
+      gravity: config.gravity ?? 0,
+      initialVelocitySpeed: config.initialVelocitySpeed,
+      initialSize: config.initialSize,
+      sizeOverTime: config.sizeOverTime,
+      initialColor: config.initialColor,
+      colorOverTime: config.colorOverTime,
+      blendMode: config.blendMode ?? ParticleBlend.ALPHA,
+      loop: config.loop ?? true,
+      bursts: config.bursts,
+      billboard: true,
+    })
+    registerQualityParticle(entity)
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('ParticleSystem unavailable', error)
+  }
   return entity
 }
 
 export function stopEmitter(entity: Entity) {
   if (ParticleSystem.has(entity)) {
-    ParticleSystem.getMutable(entity).playbackState = ParticleSystemPlaybackState.PS_STOPPED
+    ParticleSystem.getMutable(entity).playbackState = ParticlePlayback.STOPPED
   }
 }

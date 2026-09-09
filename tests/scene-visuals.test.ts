@@ -111,17 +111,17 @@ describe("Decentraland arena demo snapshot", () => {
   });
 
   it("applies tap force and opponent pressure like the mobile loop", () => {
-    const live = createDemoSnapshot({ pull: 0, timeRemaining: 10 });
+    const live = createDemoSnapshot({ pull: 0, timeRemaining: 10, phase: "live" });
     const afterTaps = stepDemoSnapshot(live, 0.1, 4);
     expect(afterTaps.pull).toBeGreaterThan(live.pull);
-    const idle = stepDemoSnapshot(createDemoSnapshot({ pull: 10, timeRemaining: 10 }), 0.25, 0);
+    const idle = stepDemoSnapshot(createDemoSnapshot({ pull: 10, timeRemaining: 10, phase: "live" }), 0.25, 0);
     expect(idle.pull).toBeLessThan(10);
   });
 
   it("ends the match at the win line or on timeout", () => {
-    const won = stepDemoSnapshot(createDemoSnapshot({ pull: 43.5, timeRemaining: 5 }), 0.016, 2);
+    const won = stepDemoSnapshot(createDemoSnapshot({ pull: 43.5, timeRemaining: 5, phase: "live" }), 0.016, 2);
     expect(won.phase === "results" || won.pull >= 44).toBe(true);
-    const timedOut = stepDemoSnapshot(createDemoSnapshot({ pull: -3, timeRemaining: 0.01 }), 0.05, 0);
+    const timedOut = stepDemoSnapshot(createDemoSnapshot({ pull: -3, timeRemaining: 0.01, phase: "live" }), 0.05, 0);
     expect(timedOut.phase).toBe("results");
     expect(timedOut.winner).toBe("moon");
   });

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { DemoModeManager } from "../../lib/mock/DemoModeManager";
 import { generateLeaderboard, generateUsers } from "../../lib/mock/generators";
 import { MockBlockchain } from "../../lib/mock/services/MockBlockchain";
+import { MockBlockchainAsync } from "../../lib/mock/services/MockBlockchainAsync";
 import { DEFAULT_MOCK_SEED, MOCK_NFT_COUNT, MOCK_USER_COUNT, SeededRandom } from "../../lib/mock/seed";
 
 describe("SeededRandom", () => {
@@ -162,6 +163,16 @@ describe("MockBlockchain", () => {
   });
 });
 
+describe("MockBlockchainAsync", () => {
+  it("forwards reads through the delayed facade to the same inner world", async () => {
+    const inner = new MockBlockchain(42, { userCount: 3, nftCount: 2, matchCount: 0, latencyMs: 0 });
+    const asyncChain = new MockBlockchainAsync(inner);
+    const [direct, delayed] = await Promise.all([inner.getCurrentUser(), asyncChain.getCurrentUser()]);
+    expect(delayed.id).toBe(direct.id);
+    expect(asyncChain.inner).toBe(inner);
+  });
+});
+
 describe("DemoModeManager", () => {
   afterEach(() => {
     DemoModeManager.resetForTests();
@@ -174,9 +185,18 @@ describe("DemoModeManager", () => {
     expect(manager.isActive()).toBe(true);
     expect(manager.getSeed()).toBe(42);
     expect(manager.getMockService()).not.toBeNull();
+    expect(manager.getFallbackReason()).toBe("explicit");
     manager.toggle();
     expect(manager.isActive()).toBe(false);
     expect(manager.getMockService()).toBeNull();
+  });
+
+  it("ensures a mock world even before enable is called", () => {
+    const manager = DemoModeManager.getInstance();
+    const service = manager.getOrCreateService();
+    expect(manager.isActive()).toBe(true);
+    expect(service).toBe(manager.getMockService());
+    expect(manager.getFallbackReason()).toBe("demo-session");
   });
 
   it("notifies subscribers when demo mode changes", () => {

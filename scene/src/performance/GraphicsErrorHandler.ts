@@ -3,6 +3,7 @@
  * Expo tests cover the same recovery decisions the explorer uses.
  */
 
+import { classifySceneFault } from '../logic/graphicsErrors'
 import { QualityManager } from './QualityManager'
 import type { QualityLevel } from './QualityManager'
 
@@ -46,9 +47,11 @@ export const initialContextLossState: ContextLossState = {
 const DEFAULT_MAX_LOGS = 80
 
 export function classifySceneGraphicsError(message: string): SceneGraphicsCategory {
-  if (/webgl|context lost|contextlost|gpu reset/i.test(message)) return 'context_loss'
   if (/fps|memory|budget|frame/i.test(message)) return 'performance'
-  if (/glb|gltf|texture|asset|load/i.test(message)) return 'asset_load'
+  if (/gpu reset/i.test(message)) return 'context_loss'
+  const fault = classifySceneFault(message)
+  if (fault !== 'unknown') return fault
+  if (/load/i.test(message)) return 'asset_load'
   if (/unsupported|webgl2|low memory/i.test(message)) return 'platform'
   return 'render'
 }
@@ -127,7 +130,7 @@ export class GraphicsErrorHandler {
     }
 
     if (typeof console !== 'undefined') {
-      console.warn(`[scene:graphics] ${category}: ${event.message}`)
+      console.log(`[scene:graphics] ${category}: ${event.message}`)
     }
 
     return event

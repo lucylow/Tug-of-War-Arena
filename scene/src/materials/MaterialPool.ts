@@ -43,7 +43,7 @@ export class MaterialPool {
     }
 
     if (this.pool.size >= this.maxMaterials) {
-      console.warn(`[MaterialPool] Material budget exceeded (${this.maxMaterials}). Reusing nearest.`)
+      console.log(`[MaterialPool] Material budget exceeded (${this.maxMaterials}). Reusing nearest.`)
       const nearest = this.nearestKey()
       const fallback = nearest ? this.pool.get(nearest) : undefined
       if (fallback && nearest) {

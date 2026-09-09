@@ -62,7 +62,7 @@ export function setupMaterials(options: MaterialsBootOptions = {}): MaterialsHan
 
   if (options.debug) {
     budget.onBudgetWarning((metric, usage, limit) => {
-      console.warn(`[Budget] ${metric}: ${usage}/${limit}`)
+      console.log(`[Budget] ${metric}: ${usage}/${limit}`)
     })
     console.log(`[materials] mobile=${isMobileClient()}`)
     console.log(`[materials] max texture ${preprocessor.getMaxTextureResolution()} (${preprocessor.getTextureFormat()})`)

@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "rea
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
 import { WalletMark } from "@/components/wallet/WalletMark";
 import { useBlockchain } from "@/hooks/use-blockchain";
+import { formatWalletError } from "@/lib/web3/errors";
 import { formatWalletModeBadge } from "@/lib/web3/format";
 import type { ConnectionMode, ConnectModeRequest } from "@/lib/web3/types";
 
@@ -26,9 +27,15 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
             text: "Disconnect",
             style: "destructive",
             onPress: () => {
-              void disconnect().then(() => {
-                onStatus?.({ connected: false, mode: null, message: "Wallet disconnected. Offline play remains available." });
-              });
+              void disconnect()
+                .then(() => {
+                  onStatus?.({ connected: false, mode: null, message: "Wallet disconnected. Offline play remains available." });
+                })
+                .catch((error) => {
+                  const message = formatWalletError(error);
+                  Alert.alert("Disconnect Failed", message);
+                  onStatus?.({ connected: false, mode: null, message });
+                });
             },
           },
         ]);
@@ -41,7 +48,7 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
         message: nextMode === "live" ? "MetaMask connected. Local reward receipt is ready." : "Demo wallet connected. Local reward receipt is ready.",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to connect wallet. Please try again.";
+      const message = formatWalletError(error);
       Alert.alert("Connection Failed", message);
       onStatus?.({ connected: false, mode: null, message });
     }

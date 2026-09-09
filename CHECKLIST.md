@@ -11,7 +11,7 @@ This is the Friendzone Buildathon gate for Tug of War Arena on phones — both t
 - [ ] **Performance**: Scene / companion loads on a mid-spec device (Samsung Galaxy A54)
 - [ ] **Performance Score**: Above 90% on the High graphics profile (DCL explorer)
 - [ ] **Preview**: Tested on a real device (not just simulator)
-- [ ] **Touch Controls**: Pull, surge, and ready work with one thumb
+- [ ] **Touch Controls**: Pull, surge, and ready work with one thumb (136pt `PullControl`, 70ms pull gate, haptic budget)
 - [ ] **No Overlap**: UI does not sit under notches, the tab bar, or DCL joystick / chat / profile chrome
 
 ## Mobile Scene Limits (Soft / Hard)

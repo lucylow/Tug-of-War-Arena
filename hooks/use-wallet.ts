@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 
-import { DemoModeManager } from "@/lib/mock/DemoModeManager";
+import { useDemoModeTick } from "@/hooks/use-demo-mode";
 import { DEFAULT_CHAIN_ID } from "@/lib/web3/config";
 import { useWallet as useMetaMaskWallet } from "@/lib/web3/MetaMaskProvider";
 import { WalletService } from "@/lib/web3/WalletService";
@@ -11,15 +11,12 @@ import { WalletService } from "@/lib/web3/WalletService";
  */
 export function useWallet() {
   const session = useMetaMaskWallet();
-  const [, setGeneration] = useState(0);
+  useDemoModeTick();
 
-  useEffect(() => DemoModeManager.getInstance().subscribe(() => setGeneration((value) => value + 1)), []);
-
-  const managerActive = DemoModeManager.getInstance().isActive();
-  const isDemo = session.connectionMode === "demo" || (managerActive && session.connectionMode !== "live");
+  const isDemo = session.connectionMode !== "live";
 
   const connect = useCallback(async () => {
-    if (DemoModeManager.getInstance().isActive() && session.connectionMode !== "live") {
+    if (session.connectionMode === "demo") {
       await WalletService.getInstance().connectDemo(session.chainId ?? DEFAULT_CHAIN_ID);
       return session.connect({ mode: "demo" });
     }

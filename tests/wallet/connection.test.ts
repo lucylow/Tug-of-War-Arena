@@ -13,6 +13,7 @@ vi.mock("../../lib/web3/client", () => ({
   disconnectLiveSession: vi.fn(async () => undefined),
 }));
 
+import { DemoModeManager } from "../../lib/mock/DemoModeManager";
 import { WalletService } from "../../lib/web3/WalletService";
 import { DEMO_ACCOUNT } from "../../lib/web3/session";
 import { connectLiveSession } from "../../lib/web3/client";
@@ -20,11 +21,13 @@ import { connectLiveSession } from "../../lib/web3/client";
 describe("WalletService", () => {
   beforeEach(() => {
     WalletService.resetForTests();
+    DemoModeManager.resetForTests();
     vi.mocked(connectLiveSession).mockReset();
   });
 
   afterEach(() => {
     WalletService.resetForTests();
+    DemoModeManager.resetForTests();
   });
 
   it("returns the same singleton instance", () => {
@@ -54,9 +57,26 @@ describe("WalletService", () => {
     expect(wallet.getAddress()).toBeNull();
   });
 
-  it("surfaces live connection failures", async () => {
-    vi.mocked(connectLiveSession).mockRejectedValueOnce(new Error("User rejected"));
+  it("switches a demo session locally without talking to MetaMask", async () => {
     const wallet = WalletService.getInstance();
-    await expect(wallet.connect()).rejects.toThrow("User rejected");
+    await wallet.connectDemo(80002);
+    await wallet.switchNetwork(137);
+    expect(wallet.getChainId()).toBe(137);
+  });
+
+  it("surfaces live connection failures when the user rejects", async () => {
+    vi.mocked(connectLiveSession).mockRejectedValueOnce({ code: 4001, message: "User rejected" });
+    const wallet = WalletService.getInstance();
+    await expect(wallet.connect()).rejects.toThrow("Connection was rejected in MetaMask.");
+  });
+
+  it("falls back to a seeded demo wallet when live connect is unavailable", async () => {
+    vi.mocked(connectLiveSession).mockRejectedValueOnce(new Error("MetaMask is not available on this device."));
+    const wallet = WalletService.getInstance();
+    const info = await wallet.connect();
+    expect(info.address).toBe(DEMO_ACCOUNT);
+    expect(info.isConnected).toBe(true);
+    expect(DemoModeManager.getInstance().isActive()).toBe(true);
+    expect(Number.parseFloat(info.balance)).toBeGreaterThan(0);
   });
 });

@@ -2,8 +2,12 @@ import { useCallback } from "react";
 
 import { useBlockchain } from "@/hooks/use-blockchain";
 import { useContract } from "@/hooks/use-contract";
+import { runLiveOrMock } from "@/lib/mock/fallback";
+import type { MockUser } from "@/lib/mock/generators";
 import { SOCIAL_REPUTATION_ABI } from "@/lib/web3/abi";
-import { DEFAULT_CHAIN_ID, getSocialReputationAddress } from "@/lib/web3/config";
+import { isLiveContractAddress } from "@/lib/web3/addresses";
+import { toUserFacingError } from "@/lib/web3/errors";
+import { requireLiveContracts, resolveLiveContracts } from "@/lib/web3/live";
 
 export type OnChainReputation = {
   score: number;
@@ -18,6 +22,19 @@ export type OnChainReputation = {
   metadata: string;
 };
 
+const REPUTATION_FIELDS = [
+  "score",
+  "trustLevel",
+  "interactions",
+  "positiveFeedback",
+  "negativeFeedback",
+  "lastActive",
+  "followers",
+  "following",
+  "isVerified",
+  "metadata",
+] as const;
+
 function readBig(value: unknown): number {
   if (typeof value === "bigint") return Number(value);
   if (typeof value === "number") return value;
@@ -25,77 +42,88 @@ function readBig(value: unknown): number {
   return 0;
 }
 
+function decodeReputation(data: unknown): OnChainReputation {
+  const record = Array.isArray(data)
+    ? Object.fromEntries(REPUTATION_FIELDS.map((key, index) => [key, data[index]]))
+    : (data as Record<string, unknown>);
+  return {
+    score: readBig(record.score),
+    trustLevel: readBig(record.trustLevel),
+    interactions: readBig(record.interactions),
+    positiveFeedback: readBig(record.positiveFeedback),
+    negativeFeedback: readBig(record.negativeFeedback),
+    lastActive: readBig(record.lastActive),
+    followers: readBig(record.followers),
+    following: readBig(record.following),
+    isVerified: Boolean(record.isVerified),
+    metadata: String(record.metadata ?? ""),
+  };
+}
+
+function fromMockProfile(profile: MockUser): OnChainReputation {
+  return {
+    score: profile.reputation,
+    trustLevel: profile.isVerified ? 3 : 1,
+    interactions: profile.matchesPlayed,
+    positiveFeedback: profile.wins,
+    negativeFeedback: profile.losses,
+    lastActive: Math.floor(profile.lastActive.getTime() / 1000),
+    followers: Math.max(1, Math.floor(profile.reputation / 10)),
+    following: Math.max(1, Math.floor(profile.level / 2)),
+    isVerified: profile.isVerified,
+    metadata: JSON.stringify({ name: profile.displayName, avatar: profile.avatarUrl, fallback: true }),
+  };
+}
+
 export function useSocialReputation() {
-  const { isConnected, connectionMode, ensureCorrectNetwork } = useBlockchain();
-  const address = getSocialReputationAddress();
+  const { isConnected, connectionMode, ensureCorrectNetwork, mockService, chainId } = useBlockchain();
+  const live = resolveLiveContracts({ isConnected, connectionMode, chainId });
+  const address = live.reputationAddress;
   const { call, send, loading, error } = useContract(address, SOCIAL_REPUTATION_ABI);
 
-  const requireLiveWallet = useCallback(async () => {
-    if (!isConnected || connectionMode !== "live") {
-      throw new Error("Connect MetaMask to use on-chain reputation.");
-    }
-    if (!address) {
-      throw new Error("Social reputation contract is not configured.");
-    }
-    await ensureCorrectNetwork(DEFAULT_CHAIN_ID);
-  }, [address, connectionMode, ensureCorrectNetwork, isConnected]);
+  const requireLiveWallet = useCallback(
+    () =>
+      requireLiveContracts(
+        { isConnected, connectionMode, ensureNetwork: ensureCorrectNetwork },
+        { reputation: true },
+      ),
+    [connectionMode, ensureCorrectNetwork, isConnected],
+  );
 
-  const follow = useCallback(
-    async (target: string) => {
-      await requireLiveWallet();
-      return send("follow", target);
+  const write = useCallback(
+    async (method: string, ...args: unknown[]) => {
+      try {
+        await requireLiveWallet();
+        return await send(method, ...args);
+      } catch (error) {
+        throw toUserFacingError(error);
+      }
     },
     [requireLiveWallet, send],
   );
 
-  const unfollow = useCallback(
-    async (target: string) => {
-      await requireLiveWallet();
-      return send("unfollow", target);
-    },
-    [requireLiveWallet, send],
-  );
-
+  const follow = useCallback((target: string) => write("follow", target), [write]);
+  const unfollow = useCallback((target: string) => write("unfollow", target), [write]);
   const updateProfile = useCallback(
-    async (name: string, avatar: string) => {
-      await requireLiveWallet();
-      return send("setMetadata", JSON.stringify({ name, avatar }));
-    },
-    [requireLiveWallet, send],
+    (name: string, avatar: string) => write("setMetadata", JSON.stringify({ name, avatar })),
+    [write],
   );
 
   const getProfile = useCallback(
     async (user: string): Promise<OnChainReputation> => {
-      await requireLiveWallet();
-      const data = (await call("getReputation", user)) as Record<string, unknown> | unknown[];
-      const record = Array.isArray(data)
-        ? {
-            score: data[0],
-            trustLevel: data[1],
-            interactions: data[2],
-            positiveFeedback: data[3],
-            negativeFeedback: data[4],
-            lastActive: data[5],
-            followers: data[6],
-            following: data[7],
-            isVerified: data[8],
-            metadata: data[9],
-          }
-        : data;
-      return {
-        score: readBig(record.score),
-        trustLevel: readBig(record.trustLevel),
-        interactions: readBig(record.interactions),
-        positiveFeedback: readBig(record.positiveFeedback),
-        negativeFeedback: readBig(record.negativeFeedback),
-        lastActive: readBig(record.lastActive),
-        followers: readBig(record.followers),
-        following: readBig(record.following),
-        isVerified: Boolean(record.isVerified),
-        metadata: String(record.metadata ?? ""),
-      };
+      const { value } = await runLiveOrMock({
+        enabled: live.canUseLiveReputation,
+        live: async () => {
+          await requireLiveWallet();
+          return decodeReputation(await call("getReputation", user));
+        },
+        mock: async (mock) => fromMockProfile((await mock.getUser(user)) ?? (await mock.getCurrentUser())),
+        mockService,
+        reason: isLiveContractAddress(address) ? "live-unavailable" : "unconfigured-contract",
+      });
+      return value;
     },
-    [call, requireLiveWallet],
+    [address, call, live.canUseLiveReputation, mockService, requireLiveWallet],
   );
 
   return { follow, unfollow, updateProfile, getProfile, loading, error, isConfigured: Boolean(address) };

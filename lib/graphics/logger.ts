@@ -7,9 +7,18 @@ import {
   type GraphicsErrorSeverity,
 } from "./errors";
 
+export enum GraphicsLogSeverity {
+  INFO = "info",
+  WARNING = "warning",
+  ERROR = "error",
+  FATAL = "fatal",
+}
+
 export interface GraphicsLogEntry extends GraphicsErrorEvent {
   componentName?: string;
 }
+
+export type GraphicsErrorLog = GraphicsLogEntry;
 
 const DEFAULT_MAX_LOGS = 100;
 

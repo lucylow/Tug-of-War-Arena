@@ -14,12 +14,14 @@ export interface FrameClock {
 
 export interface PerformanceMonitorHandle {
   stop: () => void;
+  setVisible?: (visible: boolean) => void;
 }
 
 const LOW_FPS_THRESHOLD = 30;
 
 export class MobileOptimizer {
   private static instance: MobileOptimizer | null = null;
+  private visible = true;
 
   static getInstance(): MobileOptimizer {
     if (!MobileOptimizer.instance) MobileOptimizer.instance = new MobileOptimizer();
@@ -28,6 +30,14 @@ export class MobileOptimizer {
 
   static resetInstance(): void {
     MobileOptimizer.instance = null;
+  }
+
+  setVisible(visible: boolean): void {
+    this.visible = visible;
+  }
+
+  isVisible(): boolean {
+    return this.visible;
   }
 
   lazyLoadDistance(loadDistance: number = 16): number {
@@ -48,16 +58,22 @@ export class MobileOptimizer {
     let lastCheck = clock.now();
     let frameId = 0;
     let running = true;
+    let visible = this.visible;
 
     const tick = () => {
       if (!running) return;
-      frameCount += 1;
-      const now = clock.now();
-      if (now - lastCheck >= 1000) {
-        const fps = frameCount;
+      if (visible) {
+        frameCount += 1;
+        const now = clock.now();
+        if (now - lastCheck >= 1000) {
+          const fps = frameCount;
+          frameCount = 0;
+          lastCheck = now;
+          if (fps < LOW_FPS_THRESHOLD) onLowFps(fps);
+        }
+      } else {
         frameCount = 0;
-        lastCheck = now;
-        if (fps < LOW_FPS_THRESHOLD) onLowFps(fps);
+        lastCheck = clock.now();
       }
       frameId = clock.requestFrame(tick);
     };
@@ -67,6 +83,14 @@ export class MobileOptimizer {
       stop: () => {
         running = false;
         clock.cancelFrame(frameId);
+      },
+      setVisible: (next) => {
+        visible = next;
+        this.visible = next;
+        if (!next) {
+          frameCount = 0;
+          lastCheck = clock.now();
+        }
       },
     };
   }

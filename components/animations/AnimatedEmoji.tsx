@@ -61,7 +61,7 @@ export const AnimatedEmoji = memo(function AnimatedEmoji({
   }));
 
   return (
-    <Animated.Text pointerEvents="none" style={[animatedStyle, { fontSize: size, position: "absolute" }]}>
+    <Animated.Text style={[animatedStyle, { fontSize: size, position: "absolute", pointerEvents: "none" }]}>
       {emoji}
     </Animated.Text>
   );

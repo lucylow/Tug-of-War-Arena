@@ -90,7 +90,7 @@ export function ScreenContainer({
       <View className={cn("flex-1", className)}>{body}</View>
       {footer}
       {overlay ? (
-        <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+        <View style={[StyleSheet.absoluteFill, styles.overlayLayer]}>
           {overlay}
         </View>
       ) : null}
@@ -126,5 +126,6 @@ export function ScreenContainer({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   shell: { flex: 1 },
+  overlayLayer: { pointerEvents: "box-none" },
   scrollContent: { paddingBottom: 12, flexGrow: 1 },
 });

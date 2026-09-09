@@ -1,11 +1,30 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ethers } from "ethers";
 
+import { DemoModeManager } from "@/lib/mock/DemoModeManager";
 import { connectLiveSession, disconnectLiveSession } from "@/lib/web3/client";
-import { WALLET_ACCOUNT_STORAGE_KEY } from "@/lib/web3/config";
+import { DEFAULT_CHAIN_ID, WALLET_ACCOUNT_STORAGE_KEY } from "@/lib/web3/config";
+import { shouldFallbackToDemo, toUserFacingError, toWalletError } from "@/lib/web3/errors";
 import { parseChainId } from "@/lib/web3/format";
 import { DEMO_ACCOUNT } from "@/lib/web3/session";
+import { switchEthereumChain } from "@/lib/web3/switch-chain";
 import type { Eip1193Like } from "@/lib/web3/types";
+
+async function writeStoredAccount(address: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(WALLET_ACCOUNT_STORAGE_KEY, address);
+  } catch {
+    // In-memory session still works if local storage is unavailable.
+  }
+}
+
+async function clearStoredAccount(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(WALLET_ACCOUNT_STORAGE_KEY);
+  } catch {
+    // Disconnect still clears in-memory session.
+  }
+}
 
 export interface WalletInfo {
   address: string;
@@ -37,42 +56,66 @@ export class WalletService {
     WalletService.instance = null;
   }
 
-  async connect(): Promise<WalletInfo> {
-    const live = await connectLiveSession();
-    const address = live.accounts[0];
-    if (!address) throw new Error("No accounts returned");
-
-    this.ethProvider = live.provider;
-    const provider = new ethers.BrowserProvider(live.provider as ethers.Eip1193Provider);
-    const network = await provider.getNetwork();
-    const balance = await provider.getBalance(address);
-
+  async adoptLive(ethProvider: Eip1193Like, address: string, chainId: number, balance?: string): Promise<WalletInfo> {
+    this.ethProvider = ethProvider;
+    const provider = new ethers.BrowserProvider(ethProvider as ethers.Eip1193Provider);
     this.provider = provider;
-    this.signer = await provider.getSigner();
     this.address = address;
-    this.chainId = parseChainId(network.chainId) ?? Number(network.chainId);
-
-    await AsyncStorage.setItem(WALLET_ACCOUNT_STORAGE_KEY, address);
-
+    this.chainId = chainId;
+    try {
+      this.signer = await provider.getSigner();
+    } catch {
+      this.signer = null;
+    }
+    await writeStoredAccount(address);
+    let nextBalance = balance;
+    if (nextBalance == null) {
+      try {
+        nextBalance = ethers.formatEther(await provider.getBalance(address));
+      } catch {
+        nextBalance = "0";
+      }
+    }
     return {
       address,
-      chainId: this.chainId,
-      balance: ethers.formatEther(balance),
+      chainId,
+      balance: nextBalance,
       isConnected: true,
     };
   }
 
+  async connect(): Promise<WalletInfo> {
+    try {
+      const live = await connectLiveSession();
+      const address = live.accounts[0];
+      if (!address) throw new Error("No accounts returned");
+      return this.adoptLive(live.provider, address, parseChainId(live.chainId) ?? DEFAULT_CHAIN_ID);
+    } catch (error) {
+      if (!shouldFallbackToDemo(error)) throw toWalletError(error);
+      DemoModeManager.getInstance().ensureEnabled();
+      DemoModeManager.getInstance().setFallbackReason("live-unavailable");
+      return this.connectDemo(this.chainId ?? DEFAULT_CHAIN_ID);
+    }
+  }
+
   async connectDemo(chainId: number): Promise<WalletInfo> {
+    DemoModeManager.getInstance().ensureEnabled();
     this.provider = null;
     this.signer = null;
     this.ethProvider = null;
     this.address = DEMO_ACCOUNT;
     this.chainId = chainId;
-    await AsyncStorage.setItem(WALLET_ACCOUNT_STORAGE_KEY, DEMO_ACCOUNT);
+    await writeStoredAccount(DEMO_ACCOUNT);
+    let mockBalance = 0;
+    try {
+      mockBalance = await DemoModeManager.getInstance().getOrCreateService().getBalance(DEMO_ACCOUNT);
+    } catch {
+      mockBalance = 0;
+    }
     return {
       address: DEMO_ACCOUNT,
       chainId,
-      balance: "0",
+      balance: String(mockBalance),
       isConnected: true,
     };
   }
@@ -88,7 +131,7 @@ export class WalletService {
     this.ethProvider = null;
     this.address = null;
     this.chainId = null;
-    await AsyncStorage.removeItem(WALLET_ACCOUNT_STORAGE_KEY);
+    await clearStoredAccount();
   }
 
   getAddress(): string | null {
@@ -99,14 +142,30 @@ export class WalletService {
     return this.chainId;
   }
 
+  getProvider(): ethers.BrowserProvider | null {
+    return this.provider;
+  }
+
+  getSigner(): ethers.Signer | null {
+    return this.signer;
+  }
+
   isConnected(): boolean {
     return this.address !== null;
   }
 
+  isLive(): boolean {
+    return this.ethProvider !== null && this.address !== null;
+  }
+
   async getBalance(): Promise<string> {
     if (!this.provider || !this.address) return "0";
-    const balance = await this.provider.getBalance(this.address);
-    return ethers.formatEther(balance);
+    try {
+      const balance = await this.provider.getBalance(this.address);
+      return ethers.formatEther(balance);
+    } catch {
+      return "0";
+    }
   }
 
   async switchNetwork(targetChainId: number): Promise<void> {
@@ -114,25 +173,37 @@ export class WalletService {
       this.chainId = targetChainId;
       return;
     }
-    await this.ethProvider.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: `0x${targetChainId.toString(16)}` }],
-    });
-    this.chainId = targetChainId;
+    try {
+      await switchEthereumChain(this.ethProvider, targetChainId);
+      this.chainId = targetChainId;
+    } catch (error) {
+      throw toWalletError(error);
+    }
   }
 
   async signMessage(message: string): Promise<string> {
-    if (!this.signer) throw new Error("No signer available");
-    return this.signer.signMessage(message);
+    if (!this.signer) throw new Error("Connect MetaMask to sign a message.");
+    try {
+      return await this.signer.signMessage(message);
+    } catch (error) {
+      throw toWalletError(error);
+    }
   }
 
   async sendTransaction(to: string, amount: string): Promise<string> {
-    if (!this.signer) throw new Error("No signer available");
-    const tx = await this.signer.sendTransaction({
-      to,
-      value: ethers.parseEther(amount),
-    });
-    const receipt = await tx.wait();
-    return receipt?.hash ?? tx.hash;
+    if (!this.signer) throw new Error("Connect MetaMask to send a live transaction.");
+    try {
+      const tx = await this.signer.sendTransaction({
+        to,
+        value: ethers.parseEther(amount),
+      });
+      const receipt = await tx.wait();
+      if (!receipt?.hash && !tx.hash) {
+        throw new Error("Transaction was submitted but no hash was returned.");
+      }
+      return receipt?.hash ?? tx.hash;
+    } catch (error) {
+      throw toUserFacingError(error);
+    }
   }
 }

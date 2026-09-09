@@ -1,4 +1,19 @@
-export { DemoModeManager } from "@/lib/mock/DemoModeManager";
+export { DemoModeManager, type MockFallbackReason } from "@/lib/mock/DemoModeManager";
+export {
+  MOCK_FALLBACK_COPY,
+  ensureMockBlockchain,
+  findMockMatch,
+  mockMatchReceipt,
+  noteMockFallback,
+  requireMockMatch,
+  runLiveOrMock,
+  shouldUseMockFallback,
+  toArenaMatchView,
+  toArenaPlayerStats,
+  toArenaPlayerView,
+  withMockFallback,
+} from "@/lib/mock/fallback";
+export type { MockTxReceipt } from "@/lib/mock/fallback";
 export { MOCK_CONFIG, sampleDelayMs, sleep } from "@/lib/mock/config";
 export {
   DEFAULT_MOCK_SEED,

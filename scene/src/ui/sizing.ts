@@ -1,4 +1,6 @@
-import { isMobile } from '@dcl/sdk/platform'
+import { isExplorerMobile } from '../utils/platform'
+
+import { getArenaHudPolicy } from '../logic/mobileRuntime'
 
 export const MIN_TOUCH_TARGET = 44
 export const BUTTON_HEIGHT = 48
@@ -10,17 +12,17 @@ export const UI_SIZING = {
   BUTTON_HEIGHT,
   FONT_SIZE_BODY,
   FONT_SIZE_HEADING,
-  getScaledSize: (baseSize: number): number => (isMobile() ? Math.max(baseSize * 1.5, MIN_TOUCH_TARGET) : baseSize),
-  getScaledFontSize: (baseSize: number): number => (isMobile() ? Math.max(baseSize * 1.4, 16) : baseSize),
+  getScaledSize: (baseSize: number): number =>
+    isExplorerMobile() ? Math.max(baseSize * 1.5, MIN_TOUCH_TARGET) : baseSize,
+  getScaledFontSize: (baseSize: number): number =>
+    isExplorerMobile() ? Math.max(baseSize * 1.4, 16) : baseSize,
 }
 
 export function touchTargetSize(baseSize: number = MIN_TOUCH_TARGET): number {
-  return isMobile() ? Math.max(baseSize, MIN_TOUCH_TARGET) : baseSize
+  return isExplorerMobile() ? Math.max(baseSize, MIN_TOUCH_TARGET) : baseSize
 }
 
 export function hudButtonSize(): { width: number; height: number; fontSize: number } {
-  if (isMobile()) {
-    return { width: 180, height: 56, fontSize: 20 }
-  }
-  return { width: 160, height: 48, fontSize: 18 }
+  const policy = getArenaHudPolicy(isExplorerMobile())
+  return { width: policy.pullWidth, height: policy.pullHeight, fontSize: policy.fontSize }
 }

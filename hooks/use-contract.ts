@@ -1,62 +1,83 @@
 import { useCallback, useState } from "react";
-import type { InterfaceAbi } from "ethers";
+import { ethers, type InterfaceAbi } from "ethers";
 
 import { useBlockchain } from "@/hooks/use-blockchain";
+import { formatContractError } from "@/lib/web3/errors";
+import { getReadContract } from "@/lib/web3/rpc";
+
+function isWaitable(value: unknown): value is { wait: () => Promise<unknown> } {
+  return Boolean(value && typeof value === "object" && "wait" in value && typeof (value as { wait?: unknown }).wait === "function");
+}
 
 export function useContract(contractAddress: string, abi: InterfaceAbi) {
-  const { getContract, signer, isConnected } = useBlockchain();
+  const { getContract, signer, provider, isConnected, chainId } = useBlockchain();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getContractInstance = useCallback(() => {
+  const getWriteContract = useCallback(() => {
+    if (!contractAddress) throw new Error("Contract address is not configured.");
     if (!signer) throw new Error("Wallet not connected");
     return getContract(contractAddress, abi);
   }, [abi, contractAddress, getContract, signer]);
 
-  const call = useCallback(
-    async <T>(method: string, ...args: unknown[]): Promise<T> => {
-      setLoading(true);
-      setError(null);
+  const getReadInstance = useCallback(() => {
+    if (!contractAddress) throw new Error("Contract address is not configured.");
+    const runner = signer ?? provider;
+    if (runner) return new ethers.Contract(contractAddress, abi, runner);
+    return getReadContract(contractAddress, abi, chainId ?? undefined);
+  }, [abi, chainId, contractAddress, provider, signer]);
+
+  const invoke = useCallback(
+    async <T>(
+      mode: "read" | "write",
+      method: string,
+      args: unknown[],
+      options?: { captureError?: boolean; trackLoading?: boolean },
+    ): Promise<T> => {
+      const captureError = options?.captureError ?? true;
+      const trackLoading = options?.trackLoading ?? captureError;
+      if (trackLoading) setLoading(true);
+      if (captureError) setError(null);
       try {
-        const contract = getContractInstance();
-        const fn = contract.getFunction(method);
-        return (await fn(...args)) as T;
+        const contract = mode === "write" ? getWriteContract() : getReadInstance();
+        const result = await contract.getFunction(method)(...args);
+        if (mode === "write" && isWaitable(result)) {
+          const receipt = await result.wait();
+          if (receipt == null) {
+            throw new Error("Transaction was submitted but confirmation was not returned.");
+          }
+          return receipt as T;
+        }
+        return result as T;
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : `Failed to call ${method}`;
-        setError(message);
+        if (captureError) setError(formatContractError(err));
         throw err;
       } finally {
-        setLoading(false);
+        if (trackLoading) setLoading(false);
       }
     },
-    [getContractInstance],
+    [getReadInstance, getWriteContract],
+  );
+
+  const call = useCallback(
+    async <T>(method: string, ...args: unknown[]): Promise<T> => invoke<T>("read", method, args),
+    [invoke],
+  );
+
+  const callSilent = useCallback(
+    async <T>(method: string, ...args: unknown[]): Promise<T> =>
+      invoke<T>("read", method, args, { captureError: false, trackLoading: false }),
+    [invoke],
   );
 
   const send = useCallback(
-    async <T>(method: string, ...args: unknown[]): Promise<T> => {
-      setLoading(true);
-      setError(null);
-      try {
-        const contract = getContractInstance();
-        const fn = contract.getFunction(method);
-        const tx = await fn(...args);
-        if (tx && typeof tx === "object" && "wait" in tx && typeof tx.wait === "function") {
-          return (await tx.wait()) as T;
-        }
-        return tx as T;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : `Failed to send ${method}`;
-        setError(message);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getContractInstance],
+    async <T>(method: string, ...args: unknown[]): Promise<T> => invoke<T>("write", method, args),
+    [invoke],
   );
 
   return {
     call,
+    callSilent,
     send,
     loading,
     error,

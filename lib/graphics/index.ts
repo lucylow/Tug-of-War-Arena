@@ -7,16 +7,16 @@ export {
   isRemoteAssetUri,
   nextAssetRetryDelay,
   shouldRetryAssetLoad,
-} from "./AssetLoader";
+} from "./asset-loader";
 export type {
-  Asset,
   AssetLoaderOptions,
-  AssetLoadResult,
-  AssetType,
   GraphicsAsset,
+  GraphicsAsset as Asset,
   GraphicsAssetLoadResult,
+  GraphicsAssetLoadResult as AssetLoadResult,
   GraphicsAssetType,
-} from "./AssetLoader";
+  GraphicsAssetType as AssetType,
+} from "./asset-loader";
 
 export { ErrorReportingService } from "./ErrorReportingService";
 export { GraphicsQualityManager } from "./GraphicsQualityManager";
@@ -41,8 +41,8 @@ export {
 } from "./recovery";
 export type { GraphicsRecoveryAction, GraphicsRecoveryState } from "./recovery";
 
-export { GraphicsErrorSeverity as GraphicsLogSeverity, GraphicsLogger, reportGraphicsError } from "./graphicsLogger";
-export type { GraphicsErrorLog, GraphicsLogEntry } from "./graphicsLogger";
+export { GraphicsLogSeverity, GraphicsLogger, reportGraphicsError } from "./logger";
+export type { GraphicsErrorLog, GraphicsLogEntry } from "./logger";
 
 export {
   COMPANION_QUALITY_LEVELS,
@@ -59,6 +59,7 @@ export type { CompanionGraphicsConfig, CompanionQualityLevel } from "./quality";
 export {
   QUALITY_ORDER,
   QUALITY_PRESETS,
+  classifyGraphicsErrorType,
   configForLevel,
   nextQualityForFps,
 } from "./types";

@@ -1,8 +1,9 @@
-import { ParticleSystem as DclParticleSystem, ParticleSystemBlendMode, ParticleSystemPlaybackState } from '@dcl/sdk/ecs'
+import { ParticleSystem as DclParticleSystem } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { ARENA_CENTER } from '../logic/mapping'
+import { ParticleBlend, ParticlePlayback } from '../logic/particleEnums'
 import { gold } from '../palette'
 import { ParticleSystem, type ParticleConfig } from './ParticleSystem'
 import { SPARK_COUNT, scaleCount } from './budgets'
@@ -43,13 +44,13 @@ export class SparkTrail extends ParticleSystem {
         start: Color4.create(this.config.color.r, this.config.color.g, this.config.color.b, 0.95),
         end: Color4.create(this.config.color.r, this.config.color.g, this.config.color.b, 0),
       },
-      blendMode: ParticleSystemBlendMode.PSB_ADD,
+      blendMode: ParticleBlend.ADD,
       loop: true,
     })
     if (this.entity && DclParticleSystem.has(this.entity)) {
       const particle = DclParticleSystem.getMutable(this.entity)
       particle.rate = 0
-      particle.playbackState = ParticleSystemPlaybackState.PS_STOPPED
+      particle.playbackState = ParticlePlayback.STOPPED
     }
   }
 
@@ -60,7 +61,7 @@ export class SparkTrail extends ParticleSystem {
     if (!this.entity || !DclParticleSystem.has(this.entity)) return
     const particle = DclParticleSystem.getMutable(this.entity)
     particle.rate = this.isMobileDevice ? 14 : 22
-    particle.playbackState = ParticleSystemPlaybackState.PS_PLAYING
+    particle.playbackState = ParticlePlayback.PLAYING
     this.spawnBurst(position, this.isMobileDevice ? 3 : 6)
   }
 
@@ -70,7 +71,7 @@ export class SparkTrail extends ParticleSystem {
     if (this.idleTimer > this.idleAfter) {
       const particle = DclParticleSystem.getMutable(this.entity)
       particle.rate = 0
-      particle.playbackState = ParticleSystemPlaybackState.PS_STOPPED
+      particle.playbackState = ParticlePlayback.STOPPED
     }
   }
 
@@ -79,7 +80,7 @@ export class SparkTrail extends ParticleSystem {
     if (active || !this.entity || !DclParticleSystem.has(this.entity)) return
     const particle = DclParticleSystem.getMutable(this.entity)
     particle.rate = 0
-    particle.playbackState = ParticleSystemPlaybackState.PS_STOPPED
+    particle.playbackState = ParticlePlayback.STOPPED
   }
 }
 

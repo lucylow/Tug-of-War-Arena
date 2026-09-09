@@ -1,14 +1,13 @@
 import {
   Entity,
   ParticleSystem as DclParticleSystem,
-  ParticleSystemBlendMode,
-  ParticleSystemPlaybackState,
   Transform,
   engine,
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
+import { ParticleBlend, ParticlePlayback, type ParticleBlendMode } from '../logic/particleEnums'
 import { registerQualityParticle } from '../systems/quality'
 import { maintainRate, mobileSizeBoost } from './budgets'
 
@@ -39,7 +38,7 @@ export type NativeEmitterOptions = {
   sizeOverTime?: { start: number; end: number }
   initialColor?: { start: Color4; end: Color4 }
   colorOverTime?: { start: Color4; end: Color4 }
-  blendMode?: ParticleSystemBlendMode
+  blendMode?: ParticleBlendMode
   loop?: boolean
   billboard?: boolean
   faceTravelDirection?: boolean
@@ -81,23 +80,23 @@ export abstract class ParticleSystem {
     this.isActive = active
     if (!this.entity || !DclParticleSystem.has(this.entity)) return
     DclParticleSystem.getMutable(this.entity).playbackState = active
-      ? ParticleSystemPlaybackState.PS_PLAYING
-      : ParticleSystemPlaybackState.PS_STOPPED
+      ? ParticlePlayback.PLAYING
+      : ParticlePlayback.STOPPED
   }
 
   setParticleCount(count: number): void {
     const next = Math.max(0, Math.floor(count))
     if (!this.entity || !DclParticleSystem.has(this.entity)) return
     const particle = DclParticleSystem.getMutable(this.entity)
-    const playing = particle.playbackState !== ParticleSystemPlaybackState.PS_STOPPED
+    const playing = particle.playbackState !== ParticlePlayback.STOPPED
     particle.maxParticles = next
     if (particle.loop !== false && (particle.rate ?? 0) > 0) {
       particle.rate = next <= 0 ? 0 : maintainRate(next, this.config.lifetime)
     }
     if (next <= 0) {
-      particle.playbackState = ParticleSystemPlaybackState.PS_STOPPED
+      particle.playbackState = ParticlePlayback.STOPPED
     } else if (this.isActive && playing) {
-      particle.playbackState = ParticleSystemPlaybackState.PS_PLAYING
+      particle.playbackState = ParticlePlayback.PLAYING
     }
   }
 
@@ -107,35 +106,39 @@ export abstract class ParticleSystem {
       position: options.position,
       rotation: options.rotation ?? Quaternion.fromEulerDegrees(0, 0, 0),
     })
-    DclParticleSystem.create(entity, {
-      shape: options.shape,
-      rate: options.rate ?? maintainRate(this.maxParticles, this.config.lifetime),
-      maxParticles: this.maxParticles,
-      lifetime: this.config.lifetime,
-      gravity: options.gravity ?? this.config.gravity,
-      initialVelocitySpeed: options.initialVelocitySpeed ?? {
-        start: this.config.speed * 0.35,
-        end: this.config.speed,
-      },
-      initialSize: options.initialSize ?? {
-        start: this.config.size * 0.6,
-        end: this.config.size,
-      },
-      sizeOverTime: options.sizeOverTime ?? { start: 1, end: 0.25 },
-      initialColor: options.initialColor ?? { start: this.config.color, end: this.config.color },
-      colorOverTime: options.colorOverTime ?? {
-        start: this.config.color,
-        end: Color4.create(this.config.color.r, this.config.color.g, this.config.color.b, 0),
-      },
-      blendMode: options.blendMode ?? ParticleSystemBlendMode.PSB_ADD,
-      loop: options.loop ?? true,
-      billboard: options.billboard ?? true,
-      faceTravelDirection: options.faceTravelDirection,
-      additionalForce: options.additionalForce,
-      bursts: options.bursts,
-    })
-    registerQualityParticle(entity)
-    this.entity = entity
+    try {
+      DclParticleSystem.create(entity, {
+        shape: options.shape,
+        rate: options.rate ?? maintainRate(this.maxParticles, this.config.lifetime),
+        maxParticles: this.maxParticles,
+        lifetime: this.config.lifetime,
+        gravity: options.gravity ?? this.config.gravity,
+        initialVelocitySpeed: options.initialVelocitySpeed ?? {
+          start: this.config.speed * 0.35,
+          end: this.config.speed,
+        },
+        initialSize: options.initialSize ?? {
+          start: this.config.size * 0.6,
+          end: this.config.size,
+        },
+        sizeOverTime: options.sizeOverTime ?? { start: 1, end: 0.25 },
+        initialColor: options.initialColor ?? { start: this.config.color, end: this.config.color },
+        colorOverTime: options.colorOverTime ?? {
+          start: this.config.color,
+          end: Color4.create(this.config.color.r, this.config.color.g, this.config.color.b, 0),
+        },
+        blendMode: options.blendMode ?? ParticleBlend.ADD,
+        loop: options.loop ?? true,
+        billboard: options.billboard ?? true,
+        faceTravelDirection: options.faceTravelDirection,
+        additionalForce: options.additionalForce,
+        bursts: options.bursts,
+      })
+      registerQualityParticle(entity)
+      this.entity = entity
+    } catch (error) {
+      console.log(`[vfx] ${this.name} emitter unavailable`, error)
+    }
     return entity
   }
 
@@ -152,7 +155,7 @@ export abstract class ParticleSystem {
     particle.bursts = {
       values: [{ time: 0, count: burstCount, cycles: 1, interval: 0, probability: 1 }],
     }
-    particle.playbackState = ParticleSystemPlaybackState.PS_PLAYING
+    particle.playbackState = ParticlePlayback.PLAYING
   }
 
   destroy(): void {

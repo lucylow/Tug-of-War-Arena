@@ -1,14 +1,14 @@
 import ReactEcs, { ReactEcsRenderer, UiEntity } from '@dcl/sdk/react-ecs'
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
+import { isExplorerMobile } from './utils/platform'
 
 import { formatScore, formatTimer, powerBarWidth } from './logic/mapping'
+import { getArenaHudPolicy } from './logic/mobileRuntime'
 import { cloud, gold, midnight, moon, sun, withAlpha } from './palette'
 import { getPerformanceSnapshot } from './performance/PerformanceMonitorUI'
 import { cycleWeather, queueTap, restartMatch, session } from './systems/session'
 import { SocialOverlay } from './ui/SocialOverlay'
 import { getUiRendererOptions } from './ui/safeArea'
-import { hudButtonSize } from './ui/sizing'
 import { comboAlpha, getComboPopup } from './vfx/comboState'
 
 export function setupUI() {
@@ -17,7 +17,8 @@ export function setupUI() {
 
 function ArenaHud() {
   const { state } = session
-  const mobile = isMobile()
+  const mobile = isExplorerMobile()
+  const policy = getArenaHudPolicy(mobile)
   const meterWidth = mobile ? 220 : 280
   const sunWidth = powerBarWidth(state.sunPower, meterWidth)
   const moonWidth = powerBarWidth(state.moonPower, meterWidth)
@@ -29,14 +30,14 @@ function ArenaHud() {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: mobile ? 'center' : 'space-between',
+        justifyContent: policy.justifyContent,
         alignItems: 'center',
         padding: mobile
           ? { top: 20, bottom: 24, left: 24, right: 24 }
           : { top: 24, bottom: 28, left: 32, right: 32 },
       }}
     >
-      <Vignette />
+      {policy.showVignette ? <Vignette /> : <UiEntity uiTransform={{ width: 0, height: 0 }} />}
       <ComboBanner />
       <UiEntity
         uiTransform={{
@@ -60,10 +61,10 @@ function ArenaHud() {
       <UiEntity
         uiTransform={{
           width: mobile ? 240 : '100%',
-          height: mobile ? 140 : 72,
+          height: policy.stackMeters ? 140 : 72,
           display: 'flex',
-          flexDirection: mobile ? 'column' : 'row',
-          justifyContent: mobile ? 'center' : 'space-between',
+          flexDirection: policy.stackMeters ? 'column' : 'row',
+          justifyContent: policy.stackMeters ? 'center' : 'space-between',
           alignItems: 'center',
         }}
       >
@@ -74,19 +75,29 @@ function ArenaHud() {
       <UiEntity
         uiTransform={{
           width: '100%',
-          height: mobile ? 72 : 70,
+          height: mobile ? 80 : 70,
           display: 'flex',
           flexDirection: 'row',
           justifyContent: 'center',
           alignItems: 'center',
         }}
       >
-        {hudButton('PULL', () => queueTap(1), gold)}
-        {hudButton(state.weather.toUpperCase(), () => cycleWeather(), moon)}
-        {hudButton(state.phase === 'results' ? 'REMATCH' : 'RESET', () => restartMatch(), cloud)}
+        {hudButton('PULL', () => queueTap(1), gold, { width: policy.pullWidth, height: policy.pullHeight, fontSize: policy.fontSize })}
+        {policy.showWeather
+          ? hudButton(state.weather.toUpperCase(), () => cycleWeather(), moon, {
+              width: policy.secondaryWidth,
+              height: policy.secondaryHeight,
+              fontSize: policy.fontSize,
+            })
+          : <UiEntity uiTransform={{ width: 0, height: 0 }} />}
+        {hudButton(state.phase === 'results' ? 'REMATCH' : 'RESET', () => restartMatch(), cloud, {
+          width: policy.secondaryWidth,
+          height: policy.secondaryHeight,
+          fontSize: policy.fontSize,
+        })}
       </UiEntity>
       {PerformanceOverlay()}
-      <SocialOverlay />
+      {policy.showSocial ? <SocialOverlay /> : <UiEntity uiTransform={{ width: 0, height: 0 }} />}
     </UiEntity>
   )
 }
@@ -102,8 +113,12 @@ function powerMeter(label: string, color: Color4, fillWidth: number, trackWidth:
   )
 }
 
-function hudButton(label: string, onMouseDown: () => void, color: Color4) {
-  const size = hudButtonSize()
+function hudButton(
+  label: string,
+  onMouseDown: () => void,
+  color: Color4,
+  size: { width: number; height: number; fontSize: number },
+) {
   return (
     <UiEntity
       uiTransform={{ width: size.width, height: size.height, margin: { left: 10, right: 10 } }}
@@ -119,7 +134,7 @@ function ComboBanner() {
   if (!popup.active) {
     return <UiEntity uiTransform={{ width: 0, height: 0 }} />
   }
-  const mobile = isMobile()
+  const mobile = isExplorerMobile()
   return (
     <UiEntity
       uiTransform={{
@@ -156,7 +171,7 @@ function PerformanceOverlay() {
     <UiEntity
       uiTransform={{
         positionType: 'absolute',
-        position: { left: '32%', top: '10%' },
+        position: { left: '32%', top: '12%' },
         width: 280,
         height: 110,
       }}

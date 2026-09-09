@@ -55,8 +55,7 @@ export const AnimatedDrawer = memo(function AnimatedDrawer({
 
   return (
     <View
-      style={styles.container}
-      pointerEvents={visible ? "auto" : "none"}
+      style={[styles.container, { pointerEvents: visible ? "auto" : "none" }]}
       accessibilityViewIsModal={visible}
     >
       <Animated.View style={[styles.overlay, overlayStyle]}>

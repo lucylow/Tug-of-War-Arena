@@ -3,13 +3,21 @@
  * Kept separate from `materials/` so that folder stays testable without `@dcl/sdk`.
  */
 
-import { GltfContainer, Transform, VisibilityComponent, engine } from '@dcl/sdk/ecs'
+import { Entity, GltfContainer, Transform, VisibilityComponent, engine } from '@dcl/sdk/ecs'
 import { Quaternion, Vector3 } from '@dcl/sdk/math'
 
 import { MODELS } from '../config'
 import { LODSystem, OcclusionCuller, tickMaterials, type CullChange, type LODChange } from '../materials'
 
 let bound = false
+
+function asEntity(id: number | Entity): Entity {
+  return id as Entity
+}
+
+function asEntityId(entity: Entity): number {
+  return entity as unknown as number
+}
 
 export function bindMaterialRuntime(): void {
   if (bound) return
@@ -38,14 +46,14 @@ export function syncTrackedTransforms(): void {
   const culler = OcclusionCuller.getInstance()
 
   for (const entity of lod.getRegistered()) {
-    if (!Transform.has(entity)) continue
-    const position = Transform.get(entity).position
+    if (!Transform.has(asEntity(entity))) continue
+    const position = Transform.get(asEntity(entity)).position
     lod.setPosition(entity, position)
   }
 
   for (const entity of culler.getRegistered()) {
-    if (!Transform.has(entity)) continue
-    const position = Transform.get(entity).position
+    if (!Transform.has(asEntity(entity))) continue
+    const position = Transform.get(asEntity(entity)).position
     culler.setPosition(entity, position)
   }
 }
@@ -59,8 +67,8 @@ export function registerFlagOptimization(entity: ReturnType<typeof engine.addEnt
   if (!Transform.has(entity)) return
   const position = Transform.get(entity).position
   const lod = LODSystem.getInstance()
-  lod.registerLOD(entity, lod.defaultLevels(mesh, mesh, mesh), position)
-  OcclusionCuller.getInstance().register(entity, position, false)
+  lod.registerLOD(asEntityId(entity), lod.defaultLevels(mesh, mesh, mesh), position)
+  OcclusionCuller.getInstance().register(asEntityId(entity), position, false)
 }
 
 export function registerArenaFlags(flags: ReturnType<typeof engine.addEntity>[]): void {
@@ -71,14 +79,14 @@ export function registerArenaFlags(flags: ReturnType<typeof engine.addEntity>[])
 }
 
 function applyLodChange(change: LODChange): void {
-  if (!Transform.has(change.entity)) return
-  const transform = Transform.getMutable(change.entity)
+  if (!Transform.has(asEntity(change.entity))) return
+  const transform = Transform.getMutable(asEntity(change.entity))
   transform.scale = Vector3.create(change.scale, change.scale, change.scale)
-  if (change.mesh && GltfContainer.has(change.entity)) {
-    GltfContainer.getMutable(change.entity).src = change.mesh
+  if (change.mesh && GltfContainer.has(asEntity(change.entity))) {
+    GltfContainer.getMutable(asEntity(change.entity)).src = change.mesh
   }
 }
 
 function applyVisibility(change: CullChange): void {
-  VisibilityComponent.createOrReplace(change.entity, { visible: change.visible })
+  VisibilityComponent.createOrReplace(asEntity(change.entity), { visible: change.visible })
 }

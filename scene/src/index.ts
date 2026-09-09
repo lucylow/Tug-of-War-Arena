@@ -1,33 +1,35 @@
-import { Animator, InputAction, Transform, engine, pointerEventsSystem } from '@dcl/sdk/ecs'
-import { getPlatform, isMobile } from '@dcl/sdk/platform'
+import { Animator, Transform, engine } from '@dcl/sdk/ecs'
+import { getPlatform } from '@dcl/sdk/platform'
 
-import { ENABLE_CLICK_TO_PULL, MODELS, PERFORMANCE } from './config'
+import { MODELS, PERFORMANCE } from './config'
 import { createArena } from './entities/arena'
 import { createAvatar, getSpawnPosition } from './entities/avatar'
 import { createFlags } from './entities/flags'
 import { createHud3D } from './entities/hud3d'
-import { box } from './entities/primitives'
 import { createRope } from './entities/rope'
 import { createWinZones } from './entities/winZones'
 import { setupExplorerInput } from './input/mobileInput'
-import { ARENA_CENTER } from './logic/mapping'
+import { defaultWeatherForPlatform, lightingPolicy } from './logic/mobileRuntime'
 import { DrawCallBatcher, setupMaterials } from './materials'
-import { midnight } from './palette'
 import { AdaptiveQualitySystem, QualityManager, SceneBudgetChecker, setupPerformance } from './performance'
 import { checkMobileLimits } from './performance/mobileLimits'
+import { configurePerformanceHost } from './performance/platform'
 import { SceneErrorHandler, setupSceneErrorHandling } from './systems/errorHandling'
 import { bindVisualSystems, registerMainLoop } from './systems/gameLoop'
-import { setupLighting } from './systems/lighting'
+import { setupLighting, setupSkyboxTime } from './systems/lighting'
+import { setupWorldBus } from './systems/messageBus'
 import { maybeSync } from './systems/network'
 import { bindMaterialRuntime, registerArenaFlags } from './systems/overdraw'
 import { setupAmbientParticles } from './systems/particles'
 import { createCenterBloom } from './systems/postfx'
 import { applyCurrentQuality, bindQualityApplicator } from './systems/quality'
-import { queueTap, session } from './systems/session'
+import { session } from './systems/session'
 import { setWeather } from './systems/weather'
 import { setupUI } from './ui'
+import { isExplorerMobile } from './utils/platform'
 import { applyVfxPlatform, setupVfx } from './vfx'
 import { setupAdvancedVisuals } from './visuals'
+import { assembleWorld } from './world'
 
 function whenPlatformReady(callback: () => void) {
   let frames = 0
@@ -50,15 +52,24 @@ export function main() {
   setupMaterials({ mobile: true, debug: PERFORMANCE.enableMonitor })
   bindQualityApplicator()
   bindMaterialRuntime()
+  setupSkyboxTime()
 
-  setupLighting()
   try {
     createArena()
   } catch (error) {
     SceneErrorHandler.getInstance().recordAssetFailure(MODELS.arena, error)
   }
-  const flags = createFlags()
-  createWinZones()
+  let flags: ReturnType<typeof createFlags> = []
+  try {
+    flags = createFlags()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('Team flags unavailable', error)
+  }
+  try {
+    createWinZones()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('Win zones unavailable', error)
+  }
 
   let rope
   try {
@@ -72,37 +83,56 @@ export function main() {
   }
   maybeSync(rope.root, [Transform.componentId], 1)
 
-  const hud = createHud3D()
-  createCenterBloom()
-  setupAmbientParticles()
-  setupVfx()
-  setWeather(session.state.weather, session.state.weatherIntensity)
+  let hud: ReturnType<typeof createHud3D> | null = null
+  try {
+    hud = createHud3D()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('3D HUD unavailable', error)
+  }
+  try {
+    createCenterBloom()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('Center bloom unavailable', error)
+  }
+  try {
+    setupAmbientParticles()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('Ambient particles unavailable', error)
+  }
+  try {
+    setupVfx()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('VFX unavailable', error)
+  }
 
   session.state.players.forEach((player) => {
-    const avatar = createAvatar({
-      id: player.id,
-      team: player.team,
-      position: getSpawnPosition(player.team, player.index),
-    })
-    maybeSync(avatar, [Transform.componentId, Animator.componentId], 10 + player.index)
+    try {
+      const avatar = createAvatar({
+        id: player.id,
+        team: player.team,
+        position: getSpawnPosition(player.team, player.index),
+      })
+      maybeSync(avatar, [Transform.componentId, Animator.componentId], 10 + player.index)
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault(`Avatar unavailable for ${player.id}`, error)
+    }
   })
 
-  if (ENABLE_CLICK_TO_PULL) {
-    const pad = box(
-      undefined,
-      { x: ARENA_CENTER.x, y: 0.12, z: ARENA_CENTER.z + 7.4 },
-      { x: 4.4, y: 0.18, z: 2.2 },
-      midnight,
-      { emissive: midnight, emissiveIntensity: 0.4, collider: true },
-    )
-    pointerEventsSystem.onPointerDown(
-      { entity: pad, opts: { button: InputAction.IA_POINTER, hoverText: 'Pull!' } },
-      () => queueTap(1),
-    )
+  try {
+    setupWorldBus()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('World message bus unavailable', error)
+  }
+
+  try {
+    assembleWorld()
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('World assembly unavailable', error)
   }
 
   whenPlatformReady(() => {
-    const mobile = isMobile()
+    const mobile = isExplorerMobile()
+    configurePerformanceHost({ mobile })
     AdaptiveQualitySystem.getInstance().setTargetFps(
       mobile ? PERFORMANCE.targetFpsMobile : PERFORMANCE.targetFpsDesktop,
     )
@@ -111,22 +141,63 @@ export function main() {
       quality.setQuality('high')
     }
 
-    setupUI()
-    setupExplorerInput()
-    applyCurrentQuality()
-    applyVfxPlatform(mobile)
+    const lights = lightingPolicy(mobile)
+    try {
+      setupLighting({ mobile, enableLights: lights.dynamicLights, shadows: lights.shadows })
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Dynamic lights unavailable', error)
+    }
+
+    if (mobile) {
+      session.state.weather = defaultWeatherForPlatform(true)
+      session.state.weatherIntensity = 0
+      setWeather(session.state.weather, session.state.weatherIntensity)
+    }
+
+    try {
+      setupUI()
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Arena HUD failed to start', error)
+    }
+    try {
+      setupExplorerInput()
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Explorer input unavailable', error)
+    }
+    try {
+      applyCurrentQuality()
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Quality applicator failed', error)
+    }
+    try {
+      applyVfxPlatform(mobile)
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('VFX platform profile unavailable', error)
+    }
     try {
       setupAdvancedVisuals()
     } catch (error) {
       SceneErrorHandler.getInstance().recordFault('Advanced visuals failed to start', error)
     }
-    registerArenaFlags(flags)
-    DrawCallBatcher.getInstance().batch()
+    try {
+      registerArenaFlags(flags)
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Arena flag batching unavailable', error)
+    }
+    try {
+      DrawCallBatcher.getInstance().batch()
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Draw-call batching unavailable', error)
+    }
 
-    const stats = SceneBudgetChecker.getInstance().collectStats()
-    const limits = checkMobileLimits(stats)
-    if (!limits.withinLimits) {
-      console.warn('[mobile] scene budget warnings', limits.warnings)
+    try {
+      const stats = SceneBudgetChecker.getInstance().collectStats()
+      const limits = checkMobileLimits(stats)
+      if (!limits.withinLimits) {
+        console.log('[mobile] scene budget warnings', limits.warnings)
+      }
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault('Scene budget check unavailable', error)
     }
   })
   bindVisualSystems(hud, rope)

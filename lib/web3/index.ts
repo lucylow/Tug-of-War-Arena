@@ -5,18 +5,48 @@ export {
   ARENA_MATCH_DURATION_SECONDS,
   ARENA_MAX_PLAYERS,
   ARENA_WIN_THRESHOLD,
+  FZONE_ENTRY_FEE,
   FZONE_ENTRY_FEE_LABEL,
   FRIENDZONE_ADDRESSES,
   POLYGON_AMOY_CHAIN_ID,
   POLYGON_MAINNET_CHAIN_ID,
   UNCONFIGURED_ADDRESSES,
+  ZERO_ADDRESS,
   getFriendzoneAddresses,
   isContractsConfigured,
+  isHexAddress,
+  isLiveContractAddress,
+  isZeroAddress,
 } from "./addresses";
 export type { FriendzoneAddresses, FriendzoneContractName } from "./addresses";
-export { DEFAULT_CHAIN_ID, NETWORKS, SUPPORTED_NETWORKS, getGameContractAddress, getSocialReputationAddress } from "./config";
+export {
+  DEFAULT_CHAIN_ID,
+  NETWORKS,
+  SUPPORTED_NETWORKS,
+  getExplorerAddressUrl,
+  getExplorerTxUrl,
+  getGameContractAddress,
+  getNftContractAddress,
+  getSocialReputationAddress,
+  getTokenContractAddress,
+} from "./config";
 export { formatAddress, formatBalance, formatWalletModeBadge, getNativeSymbol, getNetworkName } from "./format";
-export { decodeMatchView, decodePlayerInMatch, decodePlayerStats } from "./match";
+export { decodeMatchCreated, decodeMatchView, decodePlayerInMatch, decodePlayerStats } from "./match";
 export { DEMO_ACCOUNT } from "./session";
 export { WalletService } from "./WalletService";
 export type { WalletInfo } from "./WalletService";
+export {
+  classifyContractError,
+  formatContractError,
+  formatWalletError,
+  isConnectivityFailure,
+  isContractRevert,
+  isPendingRequest,
+  isSubmittedTransactionFailure,
+  isUserRejected,
+  shouldFallbackToDemo,
+  toUserFacingError,
+  toWalletError,
+} from "./errors";
+export { needsTokenApproval, parseEtherAmount } from "./token";
+export { requireLiveContracts, resolveLiveContracts } from "./live";

@@ -1,4 +1,4 @@
-import { getFriendzoneAddresses, isContractsConfigured } from "@/lib/web3/addresses";
+import { getFriendzoneAddresses, isLiveContractAddress } from "@/lib/web3/addresses";
 
 export const DAPP_METADATA = {
   name: "Tug of War Arena",
@@ -58,18 +58,52 @@ export function getDefaultNetwork(): NetworkDefinition {
   return NETWORKS[DEFAULT_CHAIN_ID] ?? NETWORKS[80002] ?? NETWORKS[137] ?? NETWORKS[1]!;
 }
 
+function envAddress(raw: string | undefined): string {
+  const value = raw?.trim() ?? "";
+  return isLiveContractAddress(value) ? value : "";
+}
+
+function configuredAddress(fromEnv: string | undefined, deployed: string): string {
+  const address = envAddress(fromEnv) || deployed;
+  return isLiveContractAddress(address) ? address : "";
+}
+
 export function getGameContractAddress(chainId: number = DEFAULT_CHAIN_ID): string {
-  const fromEnv = process.env.EXPO_PUBLIC_GAME_CONTRACT?.trim() ?? "";
-  if (/^0x[a-fA-F0-9]{40}$/.test(fromEnv) && !/^0x0{40}$/i.test(fromEnv)) return fromEnv;
-  const addresses = getFriendzoneAddresses(chainId);
-  return isContractsConfigured(addresses) ? addresses.TugOfWarArena : "";
+  return configuredAddress(process.env.EXPO_PUBLIC_GAME_CONTRACT, getFriendzoneAddresses(chainId).TugOfWarArena);
+}
+
+export function getTokenContractAddress(chainId: number = DEFAULT_CHAIN_ID): string {
+  return configuredAddress(process.env.EXPO_PUBLIC_TOKEN_CONTRACT, getFriendzoneAddresses(chainId).FriendzoneToken);
+}
+
+export function getNftContractAddress(chainId: number = DEFAULT_CHAIN_ID): string {
+  return configuredAddress(process.env.EXPO_PUBLIC_NFT_CONTRACT, getFriendzoneAddresses(chainId).FriendzoneNFT);
 }
 
 export function getSocialReputationAddress(chainId: number = DEFAULT_CHAIN_ID): string {
-  const fromEnv = process.env.EXPO_PUBLIC_REPUTATION_CONTRACT?.trim() ?? "";
-  if (/^0x[a-fA-F0-9]{40}$/.test(fromEnv) && !/^0x0{40}$/i.test(fromEnv)) return fromEnv;
-  const addresses = getFriendzoneAddresses(chainId);
-  return addresses.SocialReputation !== "0x0000000000000000000000000000000000000000" ? addresses.SocialReputation : "";
+  return configuredAddress(process.env.EXPO_PUBLIC_REPUTATION_CONTRACT, getFriendzoneAddresses(chainId).SocialReputation);
+}
+
+export function getExplorerBaseUrl(chainId: number | null | undefined): string | null {
+  if (chainId == null) return null;
+  const base = NETWORKS[chainId]?.blockExplorerUrls[0];
+  return base ? base.replace(/\/$/, "") : null;
+}
+
+export function getExplorerTxUrl(chainId: number | null | undefined, hash: string | null | undefined): string | null {
+  const base = getExplorerBaseUrl(chainId);
+  if (!base || !hash || hash.startsWith("demo_") || !/^0x[a-fA-F0-9]{64}$/.test(hash)) return null;
+  return `${base}/tx/${hash}`;
+}
+
+export function getExplorerAddressUrl(chainId: number | null | undefined, address: string | null | undefined): string | null {
+  const base = getExplorerBaseUrl(chainId);
+  if (!base || !isLiveContractAddress(address)) return null;
+  return `${base}/address/${address}`;
+}
+
+export function isSupportedChainId(chainId: number | null | undefined): boolean {
+  return chainId != null && chainId in NETWORKS;
 }
 
 export function getSupportedNetworkMap(): Record<`0x${string}`, string> {

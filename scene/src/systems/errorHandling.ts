@@ -10,12 +10,10 @@ import {
 } from '../logic/graphicsErrors'
 import { GraphicsErrorHandler } from '../performance/GraphicsErrorHandler'
 
-type ContextLostEvent = Event & { preventDefault: () => void }
-
 function sceneLog(level: 'info' | 'warn' | 'error', message: string, details?: unknown): void {
   const labeled = `[scene-graphics] ${message}`
   if (level === 'error') console.error(labeled, details ?? '')
-  else if (level === 'warn') console.warn(labeled, details ?? '')
+  else if (level === 'warn') console.log(labeled, details ?? '')
   else console.log(labeled, details ?? '')
 }
 
@@ -44,16 +42,22 @@ export class SceneErrorHandler {
    */
   setupWebGLErrorListener(): void {
     if (this.listening) return
-    if (typeof document === 'undefined') return
-    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    const host = globalThis as {
+      document?: {
+        querySelector?: (selector: string) => {
+          addEventListener: (type: string, listener: (event: { preventDefault?: () => void }) => void, options?: boolean) => void
+        } | null
+      }
+    }
+    const canvas = host.document?.querySelector?.('canvas')
     if (!canvas) return
     canvas.addEventListener('webglcontextlost', this.onContextLost, false)
     canvas.addEventListener('webglcontextrestored', this.onContextRestored, false)
     this.listening = true
   }
 
-  private onContextLost = (event: Event): void => {
-    ;(event as ContextLostEvent).preventDefault?.()
+  private onContextLost = (event: { preventDefault?: () => void }): void => {
+    event.preventDefault?.()
     this.recordFault('WebGL context lost')
     this.showFallbackMessage('Graphics context lost. Attempting to recover...')
     // preventDefault allows the browser to restore; we only wait, we do not call restoreContext.

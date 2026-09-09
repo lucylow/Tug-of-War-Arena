@@ -3,6 +3,7 @@ import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 import { GraphicsErrorBoundary } from "@/components/errorBoundary/GraphicsErrorBoundary";
+import { hideFromA11y } from "@/lib/a11y";
 import {
   DEFAULT_FX_COUNT,
   FX_PARTICLE_COLORS,
@@ -46,7 +47,7 @@ const ParticleDot = memo(function ParticleDot({ particle }: { particle: FxPartic
     };
   });
 
-  return <Animated.View pointerEvents="none" style={[styles.dot, style]} />;
+  return <Animated.View style={[styles.dot, style]} />;
 });
 
 export const ParticleSystem = memo(function ParticleSystem({
@@ -81,10 +82,8 @@ export const ParticleSystem = memo(function ParticleSystem({
   return (
     <GraphicsErrorBoundary componentName="ParticleSystem" fallback={null}>
       <View
-        pointerEvents="none"
         style={[styles.layer, { width: areaWidth, height: areaHeight }]}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
+        {...hideFromA11y()}
       >
         {particles.map((particle) => (
           <ParticleDot key={particle.id} particle={particle} />
@@ -101,8 +100,10 @@ const styles = StyleSheet.create({
   layer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 25,
+    pointerEvents: "none",
   },
   dot: {
     position: "absolute",
+    pointerEvents: "none",
   },
 });

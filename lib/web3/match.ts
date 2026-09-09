@@ -1,9 +1,11 @@
 import { ethers } from "ethers";
 
+import { TUG_OF_WAR_ARENA_ABI } from "@/lib/web3/abi";
 import type { ArenaMatchView, ArenaPlayerStats, ArenaPlayerView } from "@/lib/web3/types";
 
 const MATCH_STATUS = ["Waiting", "Active", "Finished"] as const;
 const MATCH_TEAM = ["Sun", "Moon"] as const;
+const arenaInterface = new ethers.Interface(TUG_OF_WAR_ARENA_ABI);
 
 export function formatTokenAmount(value: unknown): string {
   try {
@@ -76,4 +78,25 @@ export function decodePlayerStats(elo: unknown, player?: ArenaPlayerView | null)
     power: player?.power ?? "0",
     isReady: player?.isReady ?? false,
   };
+}
+
+export function decodeMatchCreated(receipt: {
+  hash?: string;
+  logs?: readonly { topics: readonly string[]; data: string }[];
+} | null | undefined): { hash: string; matchId: string } | null {
+  if (!receipt?.logs?.length) return null;
+  for (const log of receipt.logs) {
+    try {
+      const parsed = arenaInterface.parseLog({ topics: [...log.topics], data: log.data });
+      if (parsed?.name === "MatchCreated") {
+        return {
+          hash: receipt.hash ?? "",
+          matchId: String(parsed.args.matchId ?? parsed.args[0] ?? ""),
+        };
+      }
+    } catch {
+      // Token transfer logs and other contracts share the receipt.
+    }
+  }
+  return receipt.hash ? { hash: receipt.hash, matchId: "" } : null;
 }

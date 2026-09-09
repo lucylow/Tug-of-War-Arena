@@ -1,6 +1,8 @@
+import { ethers } from "ethers";
 import { describe, expect, it } from "vitest";
 
-import { decodeMatchView, decodePlayerInMatch, formatMatchStatus, formatMatchTeam, formatTokenAmount } from "../../lib/web3/match";
+import { TUG_OF_WAR_ARENA_ABI } from "../../lib/web3/abi";
+import { decodeMatchCreated, decodeMatchView, decodePlayerInMatch, formatMatchStatus, formatMatchTeam, formatTokenAmount } from "../../lib/web3/match";
 
 describe("game contract view decoding", () => {
   it("decodes a TugOfWarArena getMatch tuple", () => {
@@ -46,5 +48,20 @@ describe("game contract view decoding", () => {
   it("formats FZONE amounts and treats invalid values as zero", () => {
     expect(formatTokenAmount(1000000000000000000n)).toBe("1.0");
     expect(formatTokenAmount("not-a-token")).toBe("0");
+  });
+
+  it("reads MatchCreated from a live transaction receipt", () => {
+    const iface = new ethers.Interface(TUG_OF_WAR_ARENA_ABI);
+    const event = iface.getEvent("MatchCreated");
+    if (!event) throw new Error("MatchCreated missing from ABI");
+    const log = iface.encodeEventLog(event, [
+      9n,
+      "0x1111111111111111111111111111111111111111",
+      "CrewLead",
+    ]);
+    expect(decodeMatchCreated({ hash: `0x${"11".repeat(32)}`, logs: [log] })).toEqual({
+      hash: `0x${"11".repeat(32)}`,
+      matchId: "9",
+    });
   });
 });

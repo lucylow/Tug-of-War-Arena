@@ -5,8 +5,9 @@
   "private": true,
   "scripts": {
     "build": "sdk-commands build",
+    "lint": "sdk-commands build",
     "start": "sdk-commands start",
-    "start:mobile": "sdk-commands start",
+    "start:mobile": "sdk-commands start --mobile",
     "deploy": "sdk-commands deploy",
     "upgrade-sdk": "npm install --save-dev @dcl/sdk@latest",
     "upgrade-sdk:next": "npm install --save-dev @dcl/sdk@next"

@@ -20,6 +20,18 @@ export const TUG_OF_WAR_ARENA_ABI = [
   "event MatchCreated(uint256 indexed matchId, address indexed host, string displayName)",
   "event MatchFinished(uint256 indexed matchId, uint8 winner, uint256 prizePool, uint256 sunPower, uint256 moonPower)",
   "event NFTAwarded(address indexed to, uint256 indexed tokenId, uint8 rarity, uint256 indexed matchId)",
+  "error InvalidMatch()",
+  "error InvalidName()",
+  "error AlreadyInMatch()",
+  "error NotInMatch()",
+  "error MatchNotWaiting()",
+  "error MatchNotActive()",
+  "error MatchFull()",
+  "error NotAuthorized()",
+  "error NotEnoughPlayers()",
+  "error InvalidDelta()",
+  "error AlreadyFinished()",
+  "error TransferFailed()",
 ] as const;
 
 export const GAME_ABI = [

@@ -138,5 +138,3 @@ export function avatarsByTeam(team: TeamAlias): Entity[] {
 export function allAvatars() {
   return avatars
 }
-
-export { getSpawnPosition } from '../logic/mapping'

@@ -4,6 +4,7 @@ import Svg, { Path } from "react-native-svg";
 import { useAnimatedReaction, useSharedValue, withSpring, runOnJS } from "react-native-reanimated";
 
 import { GraphicsErrorBoundary } from "@/components/errorBoundary/GraphicsErrorBoundary";
+import { hideFromA11y } from "@/lib/a11y";
 import { ARENA_COLORS, SPRING_SOFT, buildRopePoints, ropePathD } from "@/lib/animations";
 
 export interface AnimatedRopeProps {
@@ -52,14 +53,14 @@ export const AnimatedRope = memo(function AnimatedRope({
     <GraphicsErrorBoundary
       componentName="AnimatedRope"
       fallback={
-        <View style={[styles.stage, { width }]} accessibilityElementsHidden>
+        <View style={[styles.stage, { width }]} {...hideFromA11y()}>
           <Svg width={width} height={80} viewBox={`0 0 ${width} 80`}>
             <Path d={path} transform="translate(0 40)" stroke={color} strokeWidth={6} fill="none" strokeLinecap="round" />
           </Svg>
         </View>
       }
     >
-      <View style={[styles.stage, { width }]} accessibilityElementsHidden>
+      <View style={[styles.stage, { width }]} {...hideFromA11y()}>
         <Svg width={width} height={80} viewBox={`0 0 ${width} 80`}>
           <Path d={path} transform="translate(0 40)" stroke={color} strokeWidth={6} fill="none" strokeLinecap="round" />
           <Path

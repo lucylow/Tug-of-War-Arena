@@ -9,17 +9,21 @@ export function setupInteraction(
   entity: Entity,
   onClick: () => void,
   hoverText: string = 'Click me!',
-  maxDistance: number = 10,
+  maxDistance: number = 32,
 ): void {
-  pointerEventsSystem.onPointerDown(
-    {
-      entity,
-      opts: {
-        button: InputAction.IA_POINTER,
-        hoverText,
-        maxDistance,
+  try {
+    pointerEventsSystem.onPointerDown(
+      {
+        entity,
+        opts: {
+          button: InputAction.IA_POINTER,
+          hoverText,
+          maxDistance,
+        },
       },
-    },
-    onClick,
-  )
+      onClick,
+    )
+  } catch (error) {
+    console.log('[interaction] pointer binding failed', error)
+  }
 }

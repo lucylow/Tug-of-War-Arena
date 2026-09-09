@@ -117,21 +117,42 @@ export class MockBlockchain implements IMockBlockchain {
   async createMatch(playerIds: string[]): Promise<MockMatch> {
     await this.delay();
     if (playerIds.length === 0) throw new Error("A match needs at least one player");
-    const random = new SeededRandom(Date.now());
+    const random = new SeededRandom(this.world.seed + this.world.matches.length + 1);
     const resolved = playerIds.map((id) => this.world.resolveUserId(id));
+    const redScore = random.nextInt(8, 20);
+    const blueScore = random.nextInt(0, 19);
+    const winnerTeam: "red" | "blue" = redScore >= blueScore ? "red" : "blue";
+    const duration = random.nextInt(30, 90);
+    const startedAt = new Date();
     const match: MockMatch = {
       id: `match_${this.world.matches.length}`,
       participants: resolved,
-      winnerTeam: random.nextInt(0, 1) === 0 ? "red" : "blue",
-      redScore: random.nextInt(0, 20),
-      blueScore: random.nextInt(0, 20),
-      duration: random.nextInt(60, 180),
-      startedAt: new Date(),
-      endedAt: new Date(Date.now() + 120 * 1000),
-      ropeHistory: Array.from({ length: 50 }, () => random.nextInt(-10, 10)),
+      winnerTeam,
+      redScore,
+      blueScore,
+      duration,
+      startedAt,
+      endedAt: new Date(startedAt.getTime() + duration * 1000),
+      ropeHistory: Array.from({ length: 24 }, () => random.nextInt(-10, 10)),
       mvp: random.pick(resolved),
     };
     this.world.matches.push(match);
+    for (const userId of resolved) {
+      const user = this.world.users.find((entry) => entry.id === userId);
+      if (!user) continue;
+      user.matchesPlayed += 1;
+      const won =
+        (winnerTeam === "red" && user.faction !== "blue") || (winnerTeam === "blue" && user.faction === "blue");
+      if (won) {
+        user.wins += 1;
+        user.xp += 25;
+        user.reputation += 5;
+      } else {
+        user.losses += 1;
+        user.xp += 8;
+      }
+    }
+    this.world.rebuildLeaderboard();
     this.world.events.emit("MatchCreated", match);
     this.world.events.emit("MatchFinished", match);
     return match;

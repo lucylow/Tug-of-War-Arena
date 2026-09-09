@@ -1,3 +1,4 @@
+import { isLiveContractAddress } from "@/lib/web3/addresses";
 import { NETWORKS } from "@/lib/web3/config";
 import type { ConnectionMode } from "@/lib/web3/types";
 
@@ -47,5 +48,5 @@ export function formatBalance(balance: string | null | undefined, decimals = 4):
 }
 
 export function isConfiguredContractAddress(address: string | null | undefined): boolean {
-  return Boolean(address && /^0x[a-fA-F0-9]{40}$/.test(address));
+  return isLiveContractAddress(address);
 }

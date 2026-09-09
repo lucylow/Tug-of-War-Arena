@@ -1,5 +1,7 @@
-import { LightSource, ParticleSystem, ParticleSystemPlaybackState, Transform, engine } from '@dcl/sdk/ecs'
+import { LightSource, ParticleSystem, Transform, engine } from '@dcl/sdk/ecs'
 import { Vector3 } from '@dcl/sdk/math'
+
+import { ParticlePlayback } from '../logic/particleEnums'
 
 import type { QualitySettings } from '../performance/QualityManager'
 import { QualityManager } from '../performance/QualityManager'
@@ -35,29 +37,45 @@ export function registerQualityBloom(entity: ReturnType<typeof engine.addEntity>
 
 export function applySceneQuality(settings: QualitySettings): void {
   for (const handle of particleHandles) {
-    if (!ParticleSystem.has(handle.entity)) continue
-    const particle = ParticleSystem.getMutable(handle.entity)
-    const nextMax = Math.min(handle.originalMax, settings.particleCount)
-    particle.maxParticles = nextMax
-    if (settings.particleCount <= 0) {
-      particle.playbackState = ParticleSystemPlaybackState.PS_STOPPED
+    try {
+      if (!ParticleSystem.has(handle.entity)) continue
+      const particle = ParticleSystem.getMutable(handle.entity)
+      const nextMax = Math.min(handle.originalMax, settings.particleCount)
+      particle.maxParticles = nextMax
+      if (settings.particleCount <= 0) {
+        particle.playbackState = ParticlePlayback.STOPPED
+      }
+    } catch {
+      continue
     }
   }
 
   for (const handle of lightHandles) {
-    if (!LightSource.has(handle.entity)) continue
-    const light = LightSource.getMutable(handle.entity)
-    light.shadow = settings.shadowsEnabled && handle.originalShadow
-    light.intensity = handle.originalIntensity * settings.lightIntensityScale
+    try {
+      if (!LightSource.has(handle.entity)) continue
+      const light = LightSource.getMutable(handle.entity)
+      light.shadow = settings.shadowsEnabled && handle.originalShadow
+      light.intensity = handle.originalIntensity * settings.lightIntensityScale
+    } catch {
+      continue
+    }
   }
 
   if (bloomEntity && Transform.has(bloomEntity)) {
-    Transform.getMutable(bloomEntity).scale = settings.postProcessing ? bloomScale : Vector3.create(0.01, 0.01, 0.01)
+    try {
+      Transform.getMutable(bloomEntity).scale = settings.postProcessing ? bloomScale : Vector3.create(0.01, 0.01, 0.01)
+    } catch {
+      // Bloom entity may have been removed after a context restore.
+    }
   }
 
-  const weather = currentWeather()
-  const intensity = session.state.weatherIntensity * settings.weatherIntensity
-  setWeather(weather, intensity)
+  try {
+    const weather = currentWeather()
+    const intensity = session.state.weatherIntensity * settings.weatherIntensity
+    setWeather(weather, intensity)
+  } catch {
+    // Weather systems are optional on low-end explorers.
+  }
 }
 
 export function bindQualityApplicator(): void {

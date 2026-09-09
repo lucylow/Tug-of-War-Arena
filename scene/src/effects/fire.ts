@@ -1,11 +1,12 @@
 import {
   Entity,
   ParticleSystem,
-  ParticleSystemBlendMode,
   Transform,
   engine,
 } from '@dcl/sdk/ecs'
 import { Color4, Quaternion, Vector3 } from '@dcl/sdk/math'
+
+import { ParticleBlend } from '../logic/particleEnums'
 
 import { gold, sun } from '../palette'
 import { QualityManager } from '../performance/QualityManager'
@@ -41,7 +42,7 @@ export function createFire(position: Vector3, count: number = 24): Entity {
       start: Color4.create(1, 0.55, 0.15, 0.95),
       end: Color4.create(0.2, 0.02, 0, 0),
     },
-    blendMode: ParticleSystemBlendMode.PSB_ADD,
+    blendMode: ParticleBlend.ADD,
     loop: true,
     billboard: true,
   })
@@ -66,7 +67,7 @@ export function createFireTrail(position: Vector3): Entity {
       start: Color4.create(1, 0.85, 0.4, 0.8),
       end: Color4.create(1, 0.4, 0.1, 0),
     },
-    blendMode: ParticleSystemBlendMode.PSB_ADD,
+    blendMode: ParticleBlend.ADD,
     billboard: true,
   })
   registerQualityParticle(entity)

@@ -2,9 +2,11 @@ export const ARENA_WIN_THRESHOLD = 44;
 export const ARENA_MATCH_DURATION_SECONDS = 30;
 export const ARENA_MAX_PLAYERS = 8;
 export const ARENA_AUTO_START_PLAYERS = 4;
+export const FZONE_ENTRY_FEE = 10n * 10n ** 18n;
 export const FZONE_ENTRY_FEE_LABEL = "10 FZONE";
 export const POLYGON_AMOY_CHAIN_ID = 80002;
 export const POLYGON_MAINNET_CHAIN_ID = 137;
+export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 
 export type FriendzoneContractName =
   | "FriendzoneToken"
@@ -38,7 +40,7 @@ export type FriendzoneContractName =
 
 export type FriendzoneAddresses = Record<FriendzoneContractName, `0x${string}`>;
 
-const ZERO = "0x0000000000000000000000000000000000000000" as const;
+const ZERO = ZERO_ADDRESS;
 
 export const UNCONFIGURED_ADDRESSES: FriendzoneAddresses = {
   FriendzoneToken: ZERO,
@@ -86,6 +88,18 @@ export function getFriendzoneAddresses(chainId: number): FriendzoneAddresses {
   return FRIENDZONE_ADDRESSES[chainId] ?? { ...UNCONFIGURED_ADDRESSES };
 }
 
+export function isHexAddress(address: string | null | undefined): boolean {
+  return Boolean(address && /^0x[a-fA-F0-9]{40}$/.test(address));
+}
+
+export function isZeroAddress(address: string | null | undefined): boolean {
+  return Boolean(address && /^0x0{40}$/i.test(address));
+}
+
+export function isLiveContractAddress(address: string | null | undefined): boolean {
+  return isHexAddress(address) && !isZeroAddress(address);
+}
+
 export function isContractsConfigured(addresses: FriendzoneAddresses): boolean {
-  return addresses.TugOfWarArena !== ZERO && addresses.FriendzoneToken !== ZERO;
+  return isLiveContractAddress(addresses.TugOfWarArena) && isLiveContractAddress(addresses.FriendzoneToken);
 }

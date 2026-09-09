@@ -1,6 +1,7 @@
 import type { GraphicsErrorCategory } from "./errors";
+import { QUALITY_ORDER, nextQualityForFps, type QualityLevel } from "./types";
 
-export type CompanionQualityLevel = "high" | "medium" | "low" | "minimal";
+export type CompanionQualityLevel = QualityLevel;
 
 export interface CompanionGraphicsConfig {
   level: CompanionQualityLevel;
@@ -10,7 +11,7 @@ export interface CompanionGraphicsConfig {
   glowEnabled: boolean;
 }
 
-export const COMPANION_QUALITY_LEVELS: CompanionQualityLevel[] = ["high", "medium", "low", "minimal"];
+export const COMPANION_QUALITY_LEVELS: CompanionQualityLevel[] = QUALITY_ORDER;
 
 export const COMPANION_QUALITY_PRESETS: Record<CompanionQualityLevel, CompanionGraphicsConfig> = {
   high: {
@@ -61,10 +62,7 @@ export function recommendQualityFromFps(
   fps: number,
   current: CompanionQualityLevel,
 ): CompanionQualityLevel {
-  if (!Number.isFinite(fps) || fps < 20) return "minimal";
-  if (fps < 30) return current === "minimal" ? "minimal" : "low";
-  if (fps > 50 && (current === "low" || current === "minimal")) return "medium";
-  return current;
+  return nextQualityForFps(current, fps);
 }
 
 export function recommendQualityFromError(

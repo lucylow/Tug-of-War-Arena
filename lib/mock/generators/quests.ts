@@ -28,18 +28,21 @@ export function generateQuests(count: number): Quest[] {
   const quests: Quest[] = [];
   for (let i = 0; i < count; i += 1) {
     const template = QUEST_TEMPLATES[i % QUEST_TEMPLATES.length]!;
+    const lane = i % 3;
+    const progress = lane === 0 ? 0 : lane === 1 ? Math.max(1, Math.floor(template.target / 2)) : template.target;
+    const completed = lane === 2;
     quests.push({
       id: `quest_${i}`,
       title: template.title,
       description: `Complete ${template.obj} ${template.target} times.`,
-      type: i % 2 === 0 ? "daily" : "weekly",
+      type: i % 2 === 0 ? "daily" : i % 5 === 0 ? "special" : "weekly",
       objective: template.obj,
       target: template.target,
       rewardXP: template.xp,
       rewardTokens: template.tokens,
       rewardBadgeId: i % 3,
-      progress: 0,
-      completed: false,
+      progress,
+      completed,
       claimed: false,
     });
   }

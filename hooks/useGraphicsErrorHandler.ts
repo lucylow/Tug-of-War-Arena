@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 import type { GraphicsError } from "@/lib/graphics";
+import { ErrorReportingService } from "@/lib/graphics/ErrorReportingService";
 import { Logger } from "@/lib/logger";
 
 export function useGraphicsErrorHandler(componentName: string) {
@@ -10,6 +11,11 @@ export function useGraphicsErrorHandler(componentName: string) {
     (error: GraphicsError) => {
       setLastError(error);
       Logger.error(`Graphics error in ${componentName}: ${error.message}`, error.details);
+      ErrorReportingService.getInstance().reportGraphicsError(
+        componentName,
+        new Error(error.message || "Graphics rendering failed"),
+        error.details,
+      );
     },
     [componentName],
   );

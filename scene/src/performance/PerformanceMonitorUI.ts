@@ -26,7 +26,7 @@ export interface PerformanceSnapshot {
 }
 
 function isDev(): boolean {
-  return typeof __DEV__ !== 'undefined' && __DEV__
+  return Boolean((globalThis as { __DEV__?: boolean }).__DEV__)
 }
 
 export class PerformanceMonitorUI {

@@ -1,5 +1,4 @@
-import { reportGraphicsError } from "./logger";
-import { GraphicsLogger } from "./logger";
+import { GraphicsLogger, reportGraphicsError } from "./logger";
 
 function currentPlatform(): string {
   try {
@@ -14,7 +13,7 @@ function currentPlatform(): string {
 
 export class ErrorReportingService {
   private static instance: ErrorReportingService | null = null;
-  private reports: Array<{ category: string; message: string; platform: string }> = [];
+  private reports: { category: string; message: string; platform: string }[] = [];
 
   static getInstance(): ErrorReportingService {
     if (!ErrorReportingService.instance) {
@@ -27,23 +26,21 @@ export class ErrorReportingService {
     ErrorReportingService.instance = null;
   }
 
-  reportGraphicsError(category: string, error: Error, context?: unknown): void {
-    reportGraphicsError(error, category);
-    GraphicsLogger.getInstance().log("error", "render", error.message, {
-      componentName: category,
-      details: context,
-    });
+  reportGraphicsError(componentName: string, error: Error, context?: unknown): void {
+    reportGraphicsError(error, componentName);
     this.reports.push({
-      category,
+      category: componentName,
       message: error.message,
       platform: currentPlatform(),
     });
-    console.warn(`[ErrorReport] ${category}: ${error.message}`);
+    if (typeof console !== "undefined") {
+      console.warn(`[ErrorReport] ${componentName}: ${error.message}`, context);
+    }
   }
 
-  reportWarning(category: string, message: string, context?: unknown): void {
+  reportWarning(componentName: string, message: string, context?: unknown): void {
     GraphicsLogger.getInstance().log("warning", "render", message, {
-      componentName: category,
+      componentName,
       details: context,
     });
   }

@@ -66,7 +66,6 @@ export const VictoryAnimation = memo(function VictoryAnimation({
 
   return (
     <Animated.View
-      pointerEvents="none"
       style={[styles.overlay, overlayStyle]}
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
@@ -93,6 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 50,
+    pointerEvents: "none",
   },
   container: {
     justifyContent: "center",

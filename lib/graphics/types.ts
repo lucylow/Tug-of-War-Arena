@@ -1,4 +1,6 @@
-export type GraphicsErrorType = "asset_load" | "context_loss" | "render" | "animation" | "performance";
+import { classifyGraphicsError, type GraphicsErrorCategory } from "./errors";
+
+export type GraphicsErrorType = GraphicsErrorCategory;
 
 export type QualityLevel = "high" | "medium" | "low" | "minimal";
 
@@ -79,13 +81,5 @@ export function nextQualityForFps(current: QualityLevel, fps: number): QualityLe
 }
 
 export function classifyGraphicsErrorType(error: unknown): GraphicsErrorType {
-  const message = error instanceof Error ? error.message : String(error ?? "");
-  const lower = message.toLowerCase();
-  if (lower.includes("webgl") || lower.includes("context lost") || lower.includes("contextlost")) return "context_loss";
-  if (lower.includes("reanimated") || lower.includes("worklet") || lower.includes("keyframe")) return "animation";
-  if (lower.includes("fps") || lower.includes("memory") || lower.includes("performance")) return "performance";
-  if (lower.includes("asset") || lower.includes("glb") || lower.includes("texture") || lower.includes("fetch")) {
-    return "asset_load";
-  }
-  return "render";
+  return classifyGraphicsError(error);
 }

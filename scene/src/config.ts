@@ -11,7 +11,8 @@ export const ENABLE_NETWORK_SYNC = false
 export const ENABLE_DEMO_SINE_ROPE = true
 export const ENABLE_CLICK_TO_PULL = true
 export const ENABLE_ADVANCED_VISUALS = true
-export const ENABLE_SCENE_AUDIO = true
+/** Off until MP3s exist in `sounds/` — missing clips error on the mobile explorer. */
+export const ENABLE_SCENE_AUDIO = false
 
 export const MODELS = {
   arena: 'models/arena.glb',
@@ -39,12 +40,16 @@ export const SOUNDS = {
   torch: 'sounds/torch_crackle.mp3',
 } as const
 
+/** Replace before Worlds deploy. Explorer loads the scene through this NAME/ENS. */
+export const WORLD_NAME = 'YOUR-NAME.dcl.eth'
+
 export const SCENE = {
   center: ARENA_CENTER,
   parcelSize: 32,
   defaultWeather: 'sparkle' as WeatherKind,
   nightSeconds: 72000,
   ropeSegments: 14,
+  worldName: WORLD_NAME,
 }
 
 export const PERFORMANCE = {
@@ -53,5 +58,5 @@ export const PERFORMANCE = {
   avatarIdle: true,
   targetFpsMobile: 30,
   targetFpsDesktop: 60,
-  enableMonitor: true,
+  enableMonitor: false,
 }

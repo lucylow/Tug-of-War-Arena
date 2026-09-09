@@ -49,6 +49,7 @@ describe("wallet format helpers", () => {
     expect(formatBalance(null)).toBe("0.0000");
     expect(formatBalance("not-a-number")).toBe("0.0000");
     expect(isConfiguredContractAddress("0xYourGameContract")).toBe(false);
+    expect(isConfiguredContractAddress("0x0000000000000000000000000000000000000000")).toBe(false);
     expect(isConfiguredContractAddress("0x0000000000000000000000000000000000000001")).toBe(true);
   });
 });

@@ -2,8 +2,9 @@ import { memo, useEffect, useMemo, useRef } from "react";
 import { Dimensions, InteractionManager, StyleSheet, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
-import { CONFETTI_DURATION_MS, DEFAULT_CONFETTI_COUNT, createConfettiPieces, type ConfettiPiece } from "@/lib/animations";
 import { GraphicsErrorBoundary } from "@/components/errorBoundary/GraphicsErrorBoundary";
+import { hideFromA11y } from "@/lib/a11y";
+import { CONFETTI_DURATION_MS, DEFAULT_CONFETTI_COUNT, createConfettiPieces, type ConfettiPiece } from "@/lib/animations";
 
 const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -86,7 +87,7 @@ export const ConfettiCannon = memo(function ConfettiCannon({
 
   return (
     <GraphicsErrorBoundary componentName="ConfettiCannon" fallback={null}>
-      <View style={styles.layer} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View style={styles.layer} {...hideFromA11y()}>
         {pieces.map((piece) => (
           <Piece key={piece.id} piece={piece} />
         ))}

@@ -3,7 +3,7 @@
   "runtimeVersion": "7",
   "display": {
     "title": "Tug of War Arena",
-    "description": "Neon plaza tug-of-war arena for the Decentraland Friendzone Buildathon. Sun Crew vs Moon Crew, live rope, and celebration effects.",
+    "description": "SDK7 Friendzone world: walk the plaza, pick a crew, pull the 3D rope, explore the DAO Governance Plaza, cheer on the crew board, then open the mobile companion portal. Expo app remains the portrait control surface.",
     "navmapThumbnail": "images/scene-thumbnail.png",
     "favicon": "favicon_asset"
   },
@@ -13,7 +13,7 @@
     "email": ""
   },
   "main": "bin/index.js",
-  "tags": ["game", "friendzone", "arena", "multiplayer"],
+  "tags": ["game", "friendzone", "arena", "multiplayer", "dao", "governance"],
   "scene": {
     "parcels": ["0,0", "0,1", "1,0", "1,1"],
     "base": "0,0"
@@ -30,5 +30,8 @@
     "fixedTime": 72000
   },
   "requiredPermissions": [],
-  "featureToggles": {}
+  "featureToggles": {},
+  "worldConfiguration": {
+    "name": "YOUR-NAME.dcl.eth"
+  }
 }

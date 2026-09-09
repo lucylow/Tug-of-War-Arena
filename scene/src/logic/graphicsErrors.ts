@@ -18,10 +18,23 @@ export function classifySceneFault(message: string): SceneGraphicsFault {
   if (lower.includes("webgl") || lower.includes("context lost") || lower.includes("contextlost")) {
     return "context_loss";
   }
-  if (lower.includes("glb") || lower.includes("gltf") || lower.includes("texture") || lower.includes("asset")) {
+  if (
+    lower.includes("glb") ||
+    lower.includes("gltf") ||
+    lower.includes("texture") ||
+    lower.includes("asset") ||
+    lower.includes("audio") ||
+    lower.includes("clip")
+  ) {
     return "asset_load";
   }
-  if (lower.includes("render") || lower.includes("shader") || lower.includes("material")) {
+  if (
+    lower.includes("render") ||
+    lower.includes("shader") ||
+    lower.includes("material") ||
+    lower.includes("particle") ||
+    lower.includes("light")
+  ) {
     return "render";
   }
   return "unknown";

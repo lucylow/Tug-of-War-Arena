@@ -66,50 +66,57 @@ export class SocialStore {
     for (const listener of this.listeners) listener();
   }
 
+  private async run<T>(
+    work: () => Promise<T>,
+    onSuccess: (value: T) => SocialAction,
+    onError: (message: string) => SocialAction,
+  ): Promise<void> {
+    try {
+      this.dispatch(onSuccess(await work()));
+    } catch (error) {
+      this.dispatch(onError(errorMessage(error)));
+    }
+  }
+
   async fetchFriends(): Promise<void> {
     this.dispatch({ type: "friend/fetch/pending" });
-    try {
-      const friends = await SocialAPI.getFriends();
-      this.dispatch({ type: "friend/fetch/fulfilled", payload: friends });
-    } catch (error) {
-      this.dispatch({ type: "friend/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getFriends(),
+      (payload) => ({ type: "friend/fetch/fulfilled", payload }),
+      (payload) => ({ type: "friend/fetch/rejected", payload }),
+    );
   }
 
   async fetchFriendRequests(): Promise<void> {
-    try {
-      const requests = await SocialAPI.getFriendRequests();
-      this.dispatch({ type: "friend/requests/fulfilled", payload: requests });
-    } catch (error) {
-      this.dispatch({ type: "friend/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getFriendRequests(),
+      (payload) => ({ type: "friend/requests/fulfilled", payload }),
+      (payload) => ({ type: "friend/fetch/rejected", payload }),
+    );
   }
 
   async sendFriendRequest(userId: string): Promise<void> {
-    try {
-      const request = await SocialAPI.sendFriendRequest(userId);
-      this.dispatch({ type: "friend/send/fulfilled", payload: request });
-    } catch (error) {
-      this.dispatch({ type: "friend/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.sendFriendRequest(userId),
+      (payload) => ({ type: "friend/send/fulfilled", payload }),
+      (payload) => ({ type: "friend/fetch/rejected", payload }),
+    );
   }
 
   async acceptFriendRequest(requestId: string): Promise<void> {
-    try {
-      const friend = await SocialAPI.acceptFriendRequest(requestId);
-      this.dispatch({ type: "friend/accept/fulfilled", payload: { requestId, friend } });
-    } catch (error) {
-      this.dispatch({ type: "friend/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.acceptFriendRequest(requestId),
+      (friend) => ({ type: "friend/accept/fulfilled", payload: { requestId, friend } }),
+      (payload) => ({ type: "friend/fetch/rejected", payload }),
+    );
   }
 
   async rejectFriendRequest(requestId: string): Promise<void> {
-    try {
-      const id = await SocialAPI.rejectFriendRequest(requestId);
-      this.dispatch({ type: "friend/reject/fulfilled", payload: id });
-    } catch (error) {
-      this.dispatch({ type: "friend/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.rejectFriendRequest(requestId),
+      (payload) => ({ type: "friend/reject/fulfilled", payload }),
+      (payload) => ({ type: "friend/fetch/rejected", payload }),
+    );
   }
 
   async searchUsers(query: string): Promise<void> {
@@ -117,12 +124,11 @@ export class SocialStore {
       this.dispatch({ type: "friend/clearSearch" });
       return;
     }
-    try {
-      const results = await SocialAPI.searchUsers(query);
-      this.dispatch({ type: "friend/search/fulfilled", payload: results });
-    } catch (error) {
-      this.dispatch({ type: "friend/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.searchUsers(query),
+      (payload) => ({ type: "friend/search/fulfilled", payload }),
+      (payload) => ({ type: "friend/fetch/rejected", payload }),
+    );
   }
 
   clearSearch(): void {
@@ -132,21 +138,19 @@ export class SocialStore {
   async fetchChatHistory(channel: ChatChannel): Promise<void> {
     this.dispatch({ type: "chat/fetch/pending" });
     this.dispatch({ type: "chat/setActive", payload: channel });
-    try {
-      const messages = await SocialAPI.getChatHistory(channel);
-      this.dispatch({ type: "chat/fetch/fulfilled", payload: messages });
-    } catch (error) {
-      this.dispatch({ type: "chat/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getChatHistory(channel),
+      (payload) => ({ type: "chat/fetch/fulfilled", payload }),
+      (payload) => ({ type: "chat/fetch/rejected", payload }),
+    );
   }
 
   async sendChat(input: Omit<ChatMessage, "id" | "timestamp" | "read">): Promise<void> {
-    try {
-      const message = await SocialAPI.sendMessage(input);
-      this.dispatch({ type: "chat/send/fulfilled", payload: message });
-    } catch (error) {
-      this.dispatch({ type: "chat/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.sendMessage(input),
+      (payload) => ({ type: "chat/send/fulfilled", payload }),
+      (payload) => ({ type: "chat/fetch/rejected", payload }),
+    );
   }
 
   markChannelRead(channel: string): void {
@@ -155,77 +159,69 @@ export class SocialStore {
 
   async fetchMyGuild(): Promise<void> {
     this.dispatch({ type: "guild/fetchMy/pending" });
-    try {
-      const guild = await SocialAPI.getMyGuild();
-      this.dispatch({ type: "guild/fetchMy/fulfilled", payload: guild });
-    } catch (error) {
-      this.dispatch({ type: "guild/fetchMy/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getMyGuild(),
+      (payload) => ({ type: "guild/fetchMy/fulfilled", payload }),
+      (payload) => ({ type: "guild/fetchMy/rejected", payload }),
+    );
   }
 
   async fetchGuilds(): Promise<void> {
-    try {
-      const guilds = await SocialAPI.getGuilds();
-      this.dispatch({ type: "guild/fetchAll/fulfilled", payload: guilds });
-    } catch (error) {
-      this.dispatch({ type: "guild/fetchMy/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getGuilds(),
+      (payload) => ({ type: "guild/fetchAll/fulfilled", payload }),
+      (payload) => ({ type: "guild/fetchMy/rejected", payload }),
+    );
   }
 
   async createGuild(data: { name: string; tag: string; description: string }): Promise<void> {
-    try {
-      const guild = await SocialAPI.createGuild(data);
-      this.dispatch({ type: "guild/create/fulfilled", payload: guild });
-    } catch (error) {
-      this.dispatch({ type: "guild/fetchMy/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.createGuild(data),
+      (payload) => ({ type: "guild/create/fulfilled", payload }),
+      (payload) => ({ type: "guild/fetchMy/rejected", payload }),
+    );
   }
 
   async joinGuild(guildId: string): Promise<void> {
-    try {
-      const guild = await SocialAPI.joinGuild(guildId);
-      this.dispatch({ type: "guild/join/fulfilled", payload: guild });
-    } catch (error) {
-      this.dispatch({ type: "guild/fetchMy/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.joinGuild(guildId),
+      (payload) => ({ type: "guild/join/fulfilled", payload }),
+      (payload) => ({ type: "guild/fetchMy/rejected", payload }),
+    );
   }
 
   async leaveGuild(): Promise<void> {
-    try {
-      await SocialAPI.leaveGuild();
-      this.dispatch({ type: "guild/leave/fulfilled" });
-    } catch (error) {
-      this.dispatch({ type: "guild/fetchMy/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.leaveGuild(),
+      () => ({ type: "guild/leave/fulfilled" }),
+      (payload) => ({ type: "guild/fetchMy/rejected", payload }),
+    );
   }
 
   async fetchFeed(page = 1): Promise<void> {
     this.dispatch({ type: "feed/fetch/pending" });
-    try {
-      const payload = await SocialAPI.getFeed(page);
-      this.dispatch({ type: "feed/fetch/fulfilled", payload });
-    } catch (error) {
-      this.dispatch({ type: "feed/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getFeed(page),
+      (payload) => ({ type: "feed/fetch/fulfilled", payload }),
+      (payload) => ({ type: "feed/fetch/rejected", payload }),
+    );
   }
 
   async likeFeedItem(itemId: string): Promise<void> {
-    try {
-      const id = await SocialAPI.likeFeedItem(itemId);
-      this.dispatch({ type: "feed/like/fulfilled", payload: id });
-    } catch (error) {
-      this.dispatch({ type: "feed/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.likeFeedItem(itemId),
+      (payload) => ({ type: "feed/like/fulfilled", payload }),
+      (payload) => ({ type: "feed/fetch/rejected", payload }),
+    );
   }
 
   async fetchLeaderboard(filter: LeaderboardFilter = "global"): Promise<void> {
     this.dispatch({ type: "leaderboard/fetch/pending", payload: filter });
-    try {
-      const entries = await SocialAPI.getLeaderboard(filter);
-      this.dispatch({ type: "leaderboard/fetch/fulfilled", payload: { filter, entries } });
-    } catch (error) {
-      this.dispatch({ type: "leaderboard/fetch/rejected", payload: errorMessage(error) });
-    }
+    await this.run(
+      () => SocialAPI.getLeaderboard(filter),
+      (entries) => ({ type: "leaderboard/fetch/fulfilled", payload: { filter, entries } }),
+      (payload) => ({ type: "leaderboard/fetch/rejected", payload }),
+    );
   }
 
   reset(): void {

@@ -142,6 +142,7 @@ describe("companion quality policy", () => {
     expect(nextQualityForFps("high", 28)).toBe("medium");
     expect(nextQualityForFps("low", 52)).toBe("medium");
     expect(recommendQualityFromFps(18, "high")).toBe("minimal");
+    expect(recommendQualityFromFps(28, "high")).toBe(nextQualityForFps("high", 28));
     expect(recommendQualityFromError("asset_load", "high")).toBe("high");
     expect(recommendQualityFromError("context_loss", "high")).toBe("medium");
     expect(shouldPauseVisualEffects({ level: "minimal", particleCount: 0, confettiEnabled: false, animationsEnabled: false, glowEnabled: false })).toBe(true);
@@ -189,6 +190,8 @@ describe("performance monitor samples", () => {
 describe("decentraland scene graphics faults", () => {
   it("plans GLB fallbacks and classifies explorer faults", () => {
     expect(classifySceneFault("WebGL context lost")).toBe("context_loss");
+    expect(classifySceneFault("ParticleSystem unavailable")).toBe("render");
+    expect(classifySceneFault("Audio clip failed")).toBe("asset_load");
     expect(planGltfFallback("models/arena.glb", "models/arena_fallback.glb", true)).toEqual({
       src: "models/arena_fallback.glb",
       usePlaceholder: false,

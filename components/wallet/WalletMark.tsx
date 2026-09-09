@@ -2,6 +2,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from "react-native-svg"
 import { useId } from "react";
 
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
+import { hideFromA11y } from "@/lib/a11y";
 
 type WalletMarkProps = {
   size?: number;
@@ -14,7 +15,7 @@ export function WalletMark({ size = 28, connected = false, live = false }: Walle
   const accent = live ? C.fox : connected ? C.mint : C.gold;
   const glow = live ? C.gold : connected ? C.cyan : C.fog;
   return (
-    <Svg width={size} height={size} viewBox="0 0 32 32" accessibilityElementsHidden>
+    <Svg width={size} height={size} viewBox="0 0 32 32" {...hideFromA11y()}>
       <Defs>
         <LinearGradient id={`walletMarkFace${uid}`} x1="6" y1="4" x2="26" y2="28" gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor={accent} />

@@ -3,12 +3,20 @@ import { DEFAULT_MOCK_SEED } from "@/lib/mock/seed";
 import { MockBlockchain } from "@/lib/mock/services/MockBlockchain";
 import { MockBlockchainAsync } from "@/lib/mock/services/MockBlockchainAsync";
 
+export type MockFallbackReason =
+  | "demo-session"
+  | "unconfigured-contract"
+  | "live-unavailable"
+  | "request-failed"
+  | "explicit";
+
 export class DemoModeManager {
   private static instance: DemoModeManager | null = null;
   private isEnabled = false;
   private mockService: MockBlockchain | null = null;
   private asyncService: MockBlockchainAsync | null = null;
   private seed: number = DEFAULT_MOCK_SEED;
+  private fallbackReason: MockFallbackReason | null = null;
   private listeners = new Set<() => void>();
 
   private constructor() {}
@@ -25,23 +33,39 @@ export class DemoModeManager {
     DemoModeManager.instance = null;
   }
 
-  enable(seed?: number): void {
-    if (this.isEnabled && this.mockService && (seed == null || seed === this.seed)) {
-      return;
-    }
-    this.seed = seed ?? DEFAULT_MOCK_SEED;
-    this.mockService = new MockBlockchain(this.seed, {
+  private worldOptions() {
+    return {
       userCount: MOCK_CONFIG.userCount,
       nftCount: MOCK_CONFIG.nftCount,
       matchCount: MOCK_CONFIG.matchCount,
-      latencyMs: 0,
-    });
+      questCount: MOCK_CONFIG.questCount,
+      predictionCount: MOCK_CONFIG.predictionCount,
+      achievementCount: MOCK_CONFIG.achievementCount,
+      rentalCount: MOCK_CONFIG.rentalCount,
+      latencyMs: 0 as const,
+    };
+  }
+
+  enable(seed?: number, reason: MockFallbackReason = "explicit"): MockBlockchain {
+    if (this.isEnabled && this.mockService && (seed == null || seed === this.seed)) {
+      this.fallbackReason = this.fallbackReason ?? reason;
+      return this.mockService;
+    }
+    this.seed = seed ?? DEFAULT_MOCK_SEED;
+    this.mockService = new MockBlockchain(this.seed, this.worldOptions());
     this.asyncService = new MockBlockchainAsync(this.mockService);
     this.isEnabled = true;
+    this.fallbackReason = reason;
     this.notify();
     if (typeof console !== "undefined") {
       console.log("Demo Mode ENABLED (seed:", this.seed, ")");
     }
+    return this.mockService;
+  }
+
+  ensureEnabled(seed: number = this.seed): MockBlockchain {
+    if (this.mockService && this.isEnabled && seed === this.seed) return this.mockService;
+    return this.enable(seed, this.fallbackReason ?? "demo-session");
   }
 
   disable(): void {
@@ -49,6 +73,7 @@ export class DemoModeManager {
     this.isEnabled = false;
     this.mockService = null;
     this.asyncService = null;
+    this.fallbackReason = null;
     this.notify();
     if (typeof console !== "undefined") {
       console.log("Demo Mode DISABLED");
@@ -73,12 +98,15 @@ export class DemoModeManager {
   }
 
   getOrCreateService(seed: number = this.seed): MockBlockchain {
-    if (!this.mockService) {
-      this.seed = seed;
-      this.mockService = new MockBlockchain(this.seed, { latencyMs: 0 });
-      this.asyncService = new MockBlockchainAsync(this.mockService);
-    }
-    return this.mockService;
+    return this.ensureEnabled(seed);
+  }
+
+  setFallbackReason(reason: MockFallbackReason): void {
+    this.fallbackReason = reason;
+  }
+
+  getFallbackReason(): MockFallbackReason | null {
+    return this.fallbackReason;
   }
 
   getBlockchain(): MockBlockchain | null {

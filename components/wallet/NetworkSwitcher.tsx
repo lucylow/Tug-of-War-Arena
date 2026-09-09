@@ -4,7 +4,8 @@ import { Alert, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { NetworkGlyph } from "@/components/wallet/NetworkGlyph";
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
 import { useBlockchain } from "@/hooks/use-blockchain";
-import { SUPPORTED_NETWORKS } from "@/lib/web3/config";
+import { getGameContractAddress, SUPPORTED_NETWORKS } from "@/lib/web3/config";
+import { formatWalletError } from "@/lib/web3/errors";
 import { getNetworkName } from "@/lib/web3/format";
 
 export function NetworkSwitcher() {
@@ -22,7 +23,7 @@ export function NetworkSwitcher() {
       await switchNetwork(networkId);
       setModalVisible(false);
     } catch (error) {
-      Alert.alert("Network Switch Failed", error instanceof Error ? error.message : "Failed to switch network.");
+      Alert.alert("Network Switch Failed", formatWalletError(error));
     } finally {
       setSwitching(false);
     }
@@ -68,7 +69,10 @@ export function NetworkSwitcher() {
                 <NetworkGlyph chainId={item.chainId} size={22} />
                 <View style={styles.networkInfo}>
                   <Text style={styles.networkName}>{item.name}</Text>
-                  <Text style={styles.networkSymbol}>{item.nativeCurrency.symbol} · chain {item.chainId}</Text>
+                  <Text style={styles.networkSymbol}>
+                    {item.nativeCurrency.symbol} · chain {item.chainId}
+                    {getGameContractAddress(item.chainId) ? " · contracts ready" : ""}
+                  </Text>
                 </View>
                 {chainId === item.chainId && <Text style={styles.checkmark}>●</Text>}
               </Pressable>

@@ -1,4 +1,6 @@
-import { isMobile } from '@dcl/sdk/platform'
+import { isExplorerMobile } from '../utils/platform'
+
+import { getArenaHudPolicy } from '../logic/mobileRuntime'
 
 /**
  * Mobile safe area (normalized). The explorer reports live insets — prefer
@@ -34,8 +36,10 @@ export type UiRendererOptions = {
  * keeps the full canvas (desktop interactable reserves ~25% on the left).
  */
 export function getUiRendererOptions(): UiRendererOptions {
-  if (isMobile()) {
-    return { virtualWidth: 1600, virtualHeight: 720, screenInset: 'interactable' }
+  const policy = getArenaHudPolicy(isExplorerMobile())
+  return {
+    virtualWidth: policy.virtualWidth,
+    virtualHeight: policy.virtualHeight,
+    ...(policy.screenInset ? { screenInset: policy.screenInset } : {}),
   }
-  return { virtualWidth: 1920, virtualHeight: 1080 }
 }

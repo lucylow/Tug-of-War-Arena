@@ -1,8 +1,9 @@
-import { ParticleSystem as DclParticleSystem, ParticleSystemBlendMode } from '@dcl/sdk/ecs'
+import { ParticleSystem as DclParticleSystem } from '@dcl/sdk/ecs'
 import { Color4, Vector3 } from '@dcl/sdk/math'
 import { isMobile } from '@dcl/sdk/platform'
 
 import { ARENA_CENTER } from '../logic/mapping'
+import { ParticleBlend } from '../logic/particleEnums'
 import { ParticleSystem, type ParticleConfig } from './ParticleSystem'
 import { FIREFLY_COUNT, scaleCount } from './budgets'
 
@@ -41,7 +42,7 @@ export class FireflyParticles extends ParticleSystem {
         start: Color4.create(1, 1, 0.6, 0.85),
         end: Color4.create(1, 0.8, 0.2, 0),
       },
-      blendMode: ParticleSystemBlendMode.PSB_ADD,
+      blendMode: ParticleBlend.ADD,
     })
   }
 }

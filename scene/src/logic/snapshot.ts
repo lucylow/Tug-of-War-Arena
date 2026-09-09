@@ -18,7 +18,7 @@ export type ArenaPlayer = {
 }
 
 export type ArenaVisualState = {
-  phase: 'idle' | 'countdown' | 'live' | 'results'
+  phase: 'idle' | 'lobby' | 'countdown' | 'live' | 'results'
   pull: number
   sunPower: number
   moonPower: number
@@ -57,7 +57,7 @@ export function createDemoSnapshot(overrides: ArenaVisualInput = {}): ArenaVisua
   }))
 
   return {
-    phase: overrides.phase ?? 'live',
+    phase: overrides.phase ?? 'lobby',
     pull: clampPull(overrides.pull ?? 0),
     sunPower: clamp(overrides.sunPower ?? 12, 0, 100),
     moonPower: clamp(overrides.moonPower ?? 12, 0, 100),
@@ -111,6 +111,21 @@ export function stepDemoSnapshot(
   dt: number,
   tapsThisFrame: number = 0,
 ): ArenaVisualState {
+  if (state.phase === 'lobby' || state.phase === 'idle') {
+    if (tapsThisFrame <= 0) return state
+    return stepDemoSnapshot(
+      {
+        ...state,
+        phase: 'live',
+        timeRemaining: MATCH_DURATION_SECONDS,
+        winner: null,
+        celebrating: false,
+      },
+      dt,
+      tapsThisFrame,
+    )
+  }
+
   if (state.phase !== 'live') return state
 
   const tapForce = tapsThisFrame * 1.35

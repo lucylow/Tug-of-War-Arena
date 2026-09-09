@@ -28,5 +28,6 @@ describe("Friendzone web3 client boundary", () => {
     expect(TUG_OF_WAR_ARENA_ABI.some((item) => item.includes("settleMatch"))).toBe(true);
     expect(TUG_OF_WAR_ARENA_ABI.some((item) => item.includes("createMatch"))).toBe(true);
     expect(TUG_OF_WAR_ARENA_ABI.some((item) => item.includes("getMatch"))).toBe(true);
+    expect(TUG_OF_WAR_ARENA_ABI.some((item) => item.includes("error InvalidName()"))).toBe(true);
   });
 });

@@ -67,7 +67,7 @@ export class TextureAtlasManager {
     }
 
     if (this.cursorY + packedHeight > this.maxAtlasSize) {
-      console.warn(`[TextureAtlas] ${name} does not fit in ${this.maxAtlasSize}x${this.maxAtlasSize}`)
+      console.log(`[TextureAtlas] ${name} does not fit in ${this.maxAtlasSize}x${this.maxAtlasSize}`)
       return null
     }
 

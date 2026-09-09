@@ -54,9 +54,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      DemoModeManager.getInstance().enable(DEFAULT_MOCK_SEED);
-    }
+    DemoModeManager.getInstance().ensureEnabled(DEFAULT_MOCK_SEED);
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {

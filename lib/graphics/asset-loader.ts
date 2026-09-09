@@ -1,4 +1,5 @@
 import { GraphicsLogger } from "./logger";
+import type { GraphicsErrorType } from "./types";
 
 export type GraphicsAssetType = "image" | "glb" | "audio" | "font";
 
@@ -56,6 +57,13 @@ export function shouldRetryAssetLoad(attempt: number, retryCount: number): boole
 
 export function isRemoteAssetUri(uri: string): boolean {
   return /^https?:\/\//i.test(uri);
+}
+
+export function graphicsErrorFromAsset(
+  result: GraphicsAssetLoadResult,
+): { type: GraphicsErrorType; message: string } | null {
+  if (!result.error) return null;
+  return { type: "asset_load", message: result.error };
 }
 
 function defaultDelay(ms: number): Promise<void> {
@@ -156,6 +164,9 @@ export class AssetLoader {
     }
 
     const response = await this.fetchImpl(asset.uri);
+    if (!response || typeof response !== "object" || !("ok" in response)) {
+      throw new Error("Asset request returned an invalid response");
+    }
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText || "Asset request failed"}`);
     }

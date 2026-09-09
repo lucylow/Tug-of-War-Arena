@@ -8,6 +8,7 @@ import { updateRopePosition, type RopeHandle } from '../entities/rope'
 import { updateWinZones } from '../entities/winZones'
 import { ARENA_CENTER } from '../logic/mapping'
 import { tickPerformance } from '../performance'
+import { tickWorldReactions } from '../social/reactions'
 import {
   emitSpark,
   pulseRopeGlow,
@@ -19,6 +20,7 @@ import {
 } from '../vfx'
 import { tickAdvancedVisuals, triggerPowerSurgeFx } from '../visuals'
 import { playPullSound } from './audio'
+import { SceneErrorHandler } from './errorHandling'
 import { celebrateWinner } from './fireworks'
 import { tickMaterialSystems } from './overdraw'
 import { session, tickSession } from './session'
@@ -29,7 +31,7 @@ let rope: RopeHandle | null = null
 let lastWeather = session.state.weather
 let lastPowerBurst = 0
 
-export function bindVisualSystems(nextHud: Hud3D, nextRope: RopeHandle) {
+export function bindVisualSystems(nextHud: Hud3D | null, nextRope: RopeHandle) {
   hud = nextHud
   rope = nextRope
 }
@@ -61,6 +63,7 @@ export function mainLoop(dt: number) {
   }
   pulseRopeGlow(knotVec, state.pull)
   tickVfx(dt, state.weather, state.weatherIntensity)
+  tickWorldReactions(dt)
   tickAdvancedVisuals(dt, session.elapsed, knot, { sun: state.sunPower, moon: state.moonPower })
 
   if (hud) {
@@ -70,6 +73,8 @@ export function mainLoop(dt: number) {
       moonScore: state.score[1],
       sunPower: state.sunPower,
       moonPower: state.moonPower,
+      phase: state.phase,
+      winner: state.winner,
     })
   }
 
@@ -90,7 +95,17 @@ export function mainLoop(dt: number) {
 }
 
 export function registerMainLoop() {
-  engine.addSystem(mainLoop)
+  let lastFaultAt = 0
+  engine.addSystem(function guardedMainLoop(dt: number) {
+    try {
+      mainLoop(dt)
+    } catch (error) {
+      const now = Date.now()
+      if (now - lastFaultAt < 2000) return
+      lastFaultAt = now
+      SceneErrorHandler.getInstance().recordFault('Main loop frame failed', error)
+    }
+  })
 }
 
 function maybePowerSurge(team: 'sun' | 'moon', power: number) {

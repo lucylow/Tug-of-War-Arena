@@ -1,7 +1,6 @@
 import type {
   ChatMessage,
   ChatState,
-  FeedItem,
   FeedPage,
   FeedState,
   FriendRequest,
@@ -312,5 +311,3 @@ export function visibleChatMessages(
     return message.recipientId === recipientId || message.senderId === recipientId;
   });
 }
-
-export type { FeedItem };

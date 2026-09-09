@@ -141,7 +141,7 @@ export class MaterialBudgetTracker {
 
   private checkMetric(name: string, usage: number, limit: number): void {
     if (usage > limit * 0.9) {
-      console.warn(`[MaterialBudget] ${name}: ${usage}/${limit} (near limit)`)
+      console.log(`[MaterialBudget] ${name}: ${usage}/${limit} (near limit)`)
       this.onWarning?.(name, usage, limit)
     }
   }

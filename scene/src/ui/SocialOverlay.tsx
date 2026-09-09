@@ -1,12 +1,12 @@
 import { Color4 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
+import { isExplorerMobile } from '../utils/platform'
 import ReactEcs, { UiEntity } from '@dcl/sdk/react-ecs'
 
 import { gold, midnight, withAlpha } from '../palette'
 import { getSocialOverlayLayout } from '../logic/socialLayout'
 
 export function SocialOverlay(): ReactEcs.JSX.Element {
-  const mobile = isMobile()
+  const mobile = isExplorerMobile()
   const layout = getSocialOverlayLayout(mobile)
 
   return (

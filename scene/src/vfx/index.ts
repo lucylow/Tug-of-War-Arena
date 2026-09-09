@@ -1,9 +1,9 @@
 import { Vector3 } from '@dcl/sdk/math'
-import { isMobile } from '@dcl/sdk/platform'
 
 import { ARENA_CENTER, PULL_MAX, normalizeTeam, type CrewId, type TeamAlias, type WeatherKind } from '../logic/mapping'
 import { crewColor, gold } from '../palette'
 import { QualityManager } from '../performance/QualityManager'
+import { isMobileClient } from '../performance/platform'
 import { burstPowerSurge } from '../systems/particles'
 import { ComboEffect } from './ComboEffect'
 import { ConfettiEffect } from './ConfettiEffect'
@@ -64,7 +64,7 @@ export function setupVfx(): VfxRuntime {
   optimizer.registerEffect(combo)
 
   runtime = { dust, fireflies, sparks, confetti, powerSurge, ropeGlow, winGlow, combo, rain, fog, snow }
-  applyVfxPlatform(isMobile())
+  applyVfxPlatform(isMobileClient())
   console.log('[vfx] mobile-friendly system ready')
   return runtime
 }

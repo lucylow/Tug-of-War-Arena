@@ -20,12 +20,15 @@ describe("wallet connection strategy", () => {
     expect(shouldFallbackToDemo(new Error("MetaMask is not available on this device."))).toBe(true);
     expect(shouldFallbackToDemo({ code: 4001 })).toBe(false);
     expect(shouldFallbackToDemo({ code: -32002 })).toBe(false);
+    expect(shouldFallbackToDemo({ code: "ACTION_REJECTED" })).toBe(false);
     expect(shouldFallbackToDemo({ code: 4902 })).toBe(true);
   });
 
   it("formats wallet errors without leaking stack traces", () => {
     expect(formatWalletError({ code: 4001 })).toBe("Connection was rejected in MetaMask.");
+    expect(formatWalletError({ error: { code: 4001, message: "User denied" } })).toBe("Connection was rejected in MetaMask.");
     expect(formatWalletError({ code: -32002 })).toBe("A MetaMask request is already pending.");
+    expect(formatWalletError({ code: -32603 })).toBe("MetaMask could not complete that request. Try again.");
     expect(formatWalletError(new Error("boom"))).toBe("boom");
     expect(formatWalletError({})).toBe("Wallet request failed.");
   });

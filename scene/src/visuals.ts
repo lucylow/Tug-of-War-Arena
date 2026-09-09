@@ -47,44 +47,80 @@ export function setupAdvancedVisuals(): void {
   const props = advancedPropBudget(quality)
   const mobile = isMobileClient()
 
-  if (quality !== 'minimal') {
-    runtime.sky = createSkybox(undefined, { walls: skyboxEnabled(quality, mobile) })
+  try {
+    if (quality !== 'minimal') {
+      runtime.sky = createSkybox(undefined, { walls: skyboxEnabled(quality, mobile) })
+    }
+  } catch (error) {
+    console.log('[visuals] skybox unavailable', error)
   }
 
-  runtime.torches = createCornerTorches(
-    Vector3.create(ARENA_CENTER.x, 0, ARENA_CENTER.z),
-    props.torches,
-    quality !== 'low' && quality !== 'minimal',
-  )
-
-  if (props.banners) {
-    runtime.banners = createTeamBanners(Vector3.create(ARENA_CENTER.x, 0, ARENA_CENTER.z))
+  try {
+    runtime.torches = createCornerTorches(
+      Vector3.create(ARENA_CENTER.x, 0, ARENA_CENTER.z),
+      props.torches,
+      quality !== 'low' && quality !== 'minimal',
+    )
+  } catch (error) {
+    console.log('[visuals] torches unavailable', error)
   }
 
-  if (quality !== 'minimal' && quality !== 'low') {
-    scatterVegetation()
+  try {
+    if (props.banners) {
+      runtime.banners = createTeamBanners(Vector3.create(ARENA_CENTER.x, 0, ARENA_CENTER.z))
+    }
+  } catch (error) {
+    console.log('[visuals] banners unavailable', error)
   }
 
-  if (props.dummy) {
-    createInteractiveDummy(Vector3.create(ARENA_CENTER.x, 0, ARENA_CENTER.z - 9.6))
+  try {
+    if (quality !== 'minimal' && quality !== 'low') {
+      scatterVegetation()
+    }
+  } catch (error) {
+    console.log('[visuals] vegetation unavailable', error)
   }
 
-  runtime.godRays = createArenaGodRays(quality)
-
-  const energy = box(
-    undefined,
-    { x: ARENA_CENTER.x, y: 0.06, z: ARENA_CENTER.z },
-    { x: 16.5, y: 0.04, z: 0.55 },
-    mint,
-    { emissive: gold, emissiveIntensity: 0.8, roughness: 1, metallic: 0 },
-  )
-  startUVAnimation(energy, 0.12)
-
-  if (props.trails) {
-    runtime.trail = createFireTrail(Vector3.create(ARENA_CENTER.x, 1.55, ARENA_CENTER.z))
+  try {
+    if (props.dummy) {
+      createInteractiveDummy(Vector3.create(ARENA_CENTER.x - 5.4, 0, ARENA_CENTER.z - 8.4))
+    }
+  } catch (error) {
+    console.log('[visuals] interactive dummy unavailable', error)
   }
 
-  setupAudio()
+  try {
+    runtime.godRays = createArenaGodRays(quality)
+  } catch (error) {
+    console.log('[visuals] god rays unavailable', error)
+  }
+
+  try {
+    const energy = box(
+      undefined,
+      { x: ARENA_CENTER.x, y: 0.06, z: ARENA_CENTER.z },
+      { x: 16.5, y: 0.04, z: 0.55 },
+      mint,
+      { emissive: gold, emissiveIntensity: 0.8, roughness: 1, metallic: 0 },
+    )
+    startUVAnimation(energy, 0.12)
+  } catch (error) {
+    console.log('[visuals] energy strip unavailable', error)
+  }
+
+  try {
+    if (props.trails) {
+      runtime.trail = createFireTrail(Vector3.create(ARENA_CENTER.x, 1.55, ARENA_CENTER.z))
+    }
+  } catch (error) {
+    console.log('[visuals] fire trail unavailable', error)
+  }
+
+  try {
+    setupAudio()
+  } catch (error) {
+    console.log('[audio] skipped; clips missing or AudioSource unavailable', error)
+  }
 }
 
 export function tickAdvancedVisuals(
@@ -95,36 +131,48 @@ export function tickAdvancedVisuals(
 ): void {
   if (!ENABLE_ADVANCED_VISUALS) return
 
-  for (const torch of runtime.torches) animateTorch(torch, time)
-  for (const banner of runtime.banners) animateBanner(banner, time)
-  if (runtime.sky) pulseSunGlow(runtime.sky.sun, time)
-  pulseGodRays(runtime.godRays, time)
-  tickPropLod(runtime.torches.map((torch) => torch.root))
-  updateUVAnimations(dt, time)
-  updateFire(dt)
-  updatePowerSurges(dt)
+  try {
+    for (const torch of runtime.torches) animateTorch(torch, time)
+    for (const banner of runtime.banners) animateBanner(banner, time)
+    if (runtime.sky) pulseSunGlow(runtime.sky.sun, time)
+    pulseGodRays(runtime.godRays, time)
+    tickPropLod(runtime.torches.map((torch) => torch.root))
+    updateUVAnimations(dt, time)
+    updateFire(dt)
+    updatePowerSurges(dt)
 
-  if (runtime.trail && knot) {
-    updateFireTrail(runtime.trail, Vector3.create(knot.x, knot.y, knot.z))
-  }
-
-  if (powers && isComboActive(powers.sun, powers.moon)) {
-    if (!runtime.lastCombo) {
-      triggerComboFx()
-      runtime.lastCombo = true
+    if (runtime.trail && knot) {
+      updateFireTrail(runtime.trail, Vector3.create(knot.x, knot.y, knot.z))
     }
-  } else {
-    runtime.lastCombo = false
+
+    if (powers && isComboActive(powers.sun, powers.moon)) {
+      if (!runtime.lastCombo) {
+        triggerComboFx()
+        runtime.lastCombo = true
+      }
+    } else {
+      runtime.lastCombo = false
+    }
+  } catch (error) {
+    console.log('[visuals] advanced tick failed', error)
   }
 }
 
 export function triggerPowerSurgeFx(team: CrewId): void {
-  const x = team === 'sun' ? ARENA_CENTER.x - 4 : ARENA_CENTER.x + 4
-  createPowerSurge(Vector3.create(x, 1.2, ARENA_CENTER.z), team)
-  playSurgeSound()
+  try {
+    const x = team === 'sun' ? ARENA_CENTER.x - 4 : ARENA_CENTER.x + 4
+    createPowerSurge(Vector3.create(x, 1.2, ARENA_CENTER.z), team)
+    playSurgeSound()
+  } catch (error) {
+    console.log('[visuals] power surge fx failed', error)
+  }
 }
 
 export function triggerComboFx(): void {
-  createComboBurst()
-  playComboSound()
+  try {
+    createComboBurst()
+    playComboSound()
+  } catch (error) {
+    console.log('[visuals] combo fx failed', error)
+  }
 }
