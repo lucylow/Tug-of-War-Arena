@@ -29,11 +29,15 @@ export function WorldCompanionCard({ onOpenWorld, hybrid }: Props) {
   const metrics = projection.metrics;
 
   const openWorld = async () => {
-    if (onOpenWorld) {
-      await onOpenWorld();
-      return;
+    try {
+      if (onOpenWorld) {
+        await onOpenWorld();
+        return;
+      }
+      await hybrid.openWorld();
+    } catch {
+      // The companion stays usable if the 3D world link cannot open.
     }
-    await hybrid.openWorld();
   };
 
   return (

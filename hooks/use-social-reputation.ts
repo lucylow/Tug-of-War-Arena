@@ -36,16 +36,24 @@ const REPUTATION_FIELDS = [
 ] as const;
 
 function readBig(value: unknown): number {
-  if (typeof value === "bigint") return Number(value);
-  if (typeof value === "number") return value;
-  if (typeof value === "string") return Number(value);
+  if (typeof value === "bigint") {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "string") {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+  }
   return 0;
 }
 
 function decodeReputation(data: unknown): OnChainReputation {
+  if (data == null) throw new Error("Invalid reputation payload");
   const record = Array.isArray(data)
     ? Object.fromEntries(REPUTATION_FIELDS.map((key, index) => [key, data[index]]))
-    : (data as Record<string, unknown>);
+    : (data as Record<string, unknown> | null);
+  if (!record || typeof record !== "object") throw new Error("Invalid reputation payload");
   return {
     score: readBig(record.score),
     trustLevel: readBig(record.trustLevel),

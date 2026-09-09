@@ -20,6 +20,9 @@ export function useAsset(asset: Asset) {
 
     const load = async () => {
       try {
+        if (!asset?.uri) {
+          throw new Error("Asset URI is empty");
+        }
         const res = await loader.loadAsset(asset);
         if (mounted) {
           setResult(res);
