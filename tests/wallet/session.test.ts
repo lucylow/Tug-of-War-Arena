@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DEMO_ACCOUNT,
-  formatWalletError,
-  isDemoAccount,
-  resolveWalletConnectStrategy,
-  shouldFallbackToDemo,
-} from "../../lib/web3/session";
+import { formatWalletError, shouldFallbackToDemo } from "../../lib/web3/errors";
+import { DEMO_ACCOUNT, isDemoAccount, resolveWalletConnectStrategy } from "../../lib/web3/session";
 
 describe("wallet connection strategy", () => {
   it("uses demo when requested or when no live wallet is available", () => {

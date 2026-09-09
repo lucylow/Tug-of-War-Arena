@@ -429,14 +429,38 @@ export function calculateMetrics(
   };
 }
 
+export function createEmptyHybridWorldDataset(): HybridWorldDataset {
+  const rooms: WorldRoomDemo[] = [];
+  const players: WorldPlayerDemo[] = [];
+  return {
+    protocolVersion: HYBRID_PROTOCOL_VERSION,
+    generatedAt: Date.now(),
+    mode: "demo",
+    origin: { origin: "demo" },
+    players,
+    rooms,
+    events: [],
+    missions: [],
+    matches: [],
+    socialSignals: [],
+    portals: [],
+    scoreboard: createScoreboard(rooms, players),
+    metrics: calculateMetrics(players, rooms, [], [], []),
+  };
+}
+
 export function createHybridWorldDataset(seed = HYBRID_WORLD_SEED): HybridWorldDataset {
-  const random = new SeededWorldRandom(seed);
+  const random = new SeededWorldRandom(Number.isFinite(seed) ? seed : HYBRID_WORLD_SEED);
   const players = createPlayers(random);
   const rooms = createRooms(random, players);
   const matches = createMatches(random, rooms);
   const missions = createMissions(random);
   const events = createEvents(random);
   const socialSignals = createSignals(random, players);
+
+  if (players.length === 0 || rooms.length === 0) {
+    throw new Error("Hybrid world generator produced an empty universe.");
+  }
 
   return {
     protocolVersion: HYBRID_PROTOCOL_VERSION,
@@ -453,4 +477,12 @@ export function createHybridWorldDataset(seed = HYBRID_WORLD_SEED): HybridWorldD
     scoreboard: createScoreboard(rooms, players),
     metrics: calculateMetrics(players, rooms, events, matches, socialSignals),
   };
+}
+
+export function createHybridWorldDatasetSafe(seed = HYBRID_WORLD_SEED): HybridWorldDataset {
+  try {
+    return createHybridWorldDataset(seed);
+  } catch {
+    return createEmptyHybridWorldDataset();
+  }
 }

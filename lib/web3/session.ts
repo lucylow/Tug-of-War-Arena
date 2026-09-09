@@ -1,7 +1,5 @@
 import type { ConnectModeRequest, ConnectionMode } from "@/lib/web3/types";
 
-export { formatWalletError, shouldFallbackToDemo } from "@/lib/web3/errors";
-
 export const DEMO_ACCOUNT = "0x7A3F00000000000000000000000000000000C91D";
 export const DEMO_WALLET_ACCOUNT = DEMO_ACCOUNT;
 export const DEMO_WALLET_DISPLAY = "0x7A3F...C91D";

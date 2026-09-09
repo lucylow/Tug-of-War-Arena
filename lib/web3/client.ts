@@ -75,30 +75,35 @@ export async function connectLiveSession(chainId = DEFAULT_HEX_CHAIN_ID): Promis
   chainId: string;
   provider: Eip1193Like;
 }> {
-  const client = await getMetaMaskClient();
-  if (client) {
-    const result = await client.connect({ chainIds: [chainId] });
-    let provider: Eip1193Like | null = null;
-    try {
-      provider = client.getProvider();
-    } catch {
-      provider = null;
+  try {
+    const client = await getMetaMaskClient();
+    if (client) {
+      const result = await client.connect({ chainIds: [chainId] });
+      let provider: Eip1193Like | null = null;
+      try {
+        provider = client.getProvider();
+      } catch (error) {
+        console.warn("MetaMask client provider failed after connect:", error);
+        provider = null;
+      }
+      if (!provider) throw new Error("MetaMask is not available on this device.");
+      if (!result.accounts?.[0]) throw new Error("No accounts returned");
+      return { ...result, provider };
     }
-    if (!provider) throw new Error("MetaMask is not available on this device.");
-    if (!result.accounts?.[0]) throw new Error("No accounts returned");
-    return { ...result, provider };
-  }
 
-  const provider = getInjectedProvider();
-  if (!provider) {
-    throw new Error("MetaMask is not available on this device.");
+    const provider = getInjectedProvider();
+    if (!provider) {
+      throw new Error("MetaMask is not available on this device.");
+    }
+    const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
+    if (!Array.isArray(accounts) || !accounts[0]) {
+      throw new Error("No accounts returned");
+    }
+    const rawChainId = (await provider.request({ method: "eth_chainId" })) as string;
+    return { accounts, chainId: rawChainId, provider };
+  } catch (error) {
+    throw toWalletError(error);
   }
-  const accounts = (await provider.request({ method: "eth_requestAccounts" })) as string[];
-  if (!Array.isArray(accounts) || !accounts[0]) {
-    throw new Error("No accounts returned");
-  }
-  const rawChainId = (await provider.request({ method: "eth_chainId" })) as string;
-  return { accounts, chainId: rawChainId, provider };
 }
 
 export async function disconnectLiveSession(): Promise<void> {

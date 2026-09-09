@@ -1,5 +1,5 @@
 import { addChainParams } from "@/lib/web3/config";
-import { getWalletErrorCode, isUserRejected, readErrorMessage } from "@/lib/web3/errors";
+import { getWalletErrorCode, isUserRejected, readErrorMessage, toWalletError } from "@/lib/web3/errors";
 import { toHexChainId } from "@/lib/web3/format";
 import type { Eip1193Like } from "@/lib/web3/types";
 
@@ -28,6 +28,6 @@ export async function switchEthereumChain(provider: Eip1193Like, targetChainId: 
         });
       }
     }
-    throw error;
+    throw toWalletError(error);
   }
 }

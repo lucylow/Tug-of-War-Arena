@@ -44,7 +44,7 @@ export function hashAssetKey(value: string): string {
 }
 
 export function fallbackUriForType(type: GraphicsAssetType): string {
-  return GRAPHICS_ASSET_FALLBACKS[type];
+  return GRAPHICS_ASSET_FALLBACKS[type] ?? GRAPHICS_ASSET_FALLBACKS.image;
 }
 
 export function nextAssetRetryDelay(attempt: number, baseDelayMs: number): number {
@@ -115,6 +115,16 @@ export class AssetLoader {
   }
 
   async loadAsset(asset: GraphicsAsset): Promise<GraphicsAssetLoadResult> {
+    if (!asset?.uri || !asset.uri.trim()) {
+      return {
+        uri: fallbackUriForType(asset?.type ?? "image"),
+        cached: false,
+        fallback: true,
+        attempts: 0,
+        error: "Asset URI is empty",
+      };
+    }
+
     const cacheKey = asset.cacheKey ?? asset.uri;
     const cached = this.cache.get(cacheKey);
     if (cached) {

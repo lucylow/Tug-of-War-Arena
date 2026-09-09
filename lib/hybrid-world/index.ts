@@ -45,13 +45,20 @@ export {
 } from "./constants";
 
 export { SeededWorldRandom } from "./seed";
-export { calculateMetrics, createHybridWorldDataset, createScoreboard } from "./generator";
+export {
+  calculateMetrics,
+  createEmptyHybridWorldDataset,
+  createHybridWorldDataset,
+  createHybridWorldDatasetSafe,
+  createScoreboard,
+} from "./generator";
 export { projectWorldToMobile2D } from "./projection";
 export { discoverWorld, selectDiscoverablePlayers } from "./discovery";
 export {
   applyWorldSyncPacket,
   createWorldSyncPacket,
   parseWorldFeed,
+  parseWorldSyncPacket,
   serializeWorldFeed,
   simulationFromDataset,
 } from "./protocol";
@@ -65,4 +72,4 @@ export {
   formatScoreboardText,
   formatSocialSignalLine,
 } from "./boards";
-export { resolveDecentralandWorldUrl } from "./world-url";
+export { isDecentralandWorldUrl, resolveDecentralandWorldUrl } from "./world-url";

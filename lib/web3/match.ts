@@ -7,6 +7,11 @@ const MATCH_STATUS = ["Waiting", "Active", "Finished"] as const;
 const MATCH_TEAM = ["Sun", "Moon"] as const;
 const arenaInterface = new ethers.Interface(TUG_OF_WAR_ARENA_ABI);
 
+function asFiniteNumber(value: unknown, fallback = 0): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
 export function formatTokenAmount(value: unknown): string {
   try {
     return ethers.formatEther(value as ethers.BigNumberish);
@@ -29,8 +34,8 @@ export function decodeMatchView(data: unknown): ArenaMatchView {
     players,
     startTime: String(data[2] ?? "0"),
     endTime: String(data[3] ?? "0"),
-    status: Number(data[4] ?? 0),
-    winner: Number(data[5] ?? 0),
+    status: asFiniteNumber(data[4]),
+    winner: asFiniteNumber(data[5]),
     prizePool: formatTokenAmount(data[6]),
     sunPower: String(data[7] ?? "0"),
     moonPower: String(data[8] ?? "0"),
@@ -50,7 +55,7 @@ export function decodePlayerInMatch(data: unknown): ArenaPlayerView {
     return {
       wallet: String(data[0] ?? ""),
       displayName: String(data[1] ?? ""),
-      team: Number(data[2] ?? 0),
+      team: asFiniteNumber(data[2]),
       power: String(data[3] ?? "0"),
       isReady: Boolean(data[4]),
     };
@@ -61,7 +66,7 @@ export function decodePlayerInMatch(data: unknown): ArenaPlayerView {
       return {
         wallet: String(record.wallet ?? ""),
         displayName: String(record.displayName ?? ""),
-        team: Number(record.team ?? 0),
+        team: asFiniteNumber(record.team),
         power: String(record.power ?? "0"),
         isReady: Boolean(record.isReady),
       };

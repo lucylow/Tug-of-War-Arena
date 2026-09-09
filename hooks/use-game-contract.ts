@@ -107,7 +107,7 @@ export function useGameContract() {
           }
         }
         try {
-          void refreshBalance?.();
+          void Promise.resolve(refreshBalance?.()).catch(() => undefined);
         } catch {
           // Match creation still succeeded if the balance refresh fails.
         }
