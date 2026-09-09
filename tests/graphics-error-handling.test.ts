@@ -134,6 +134,16 @@ describe("asset loader recovery", () => {
     expect(shouldRetryAssetLoad(1, 2)).toBe(true);
     expect(shouldRetryAssetLoad(3, 2)).toBe(false);
   });
+
+  it("falls back immediately when the asset URI is missing", async () => {
+    const fetchImpl = vi.fn(async () => ({ ok: true, status: 200, statusText: "OK" }));
+    const loader = new AssetLoader({ fetchImpl: fetchImpl as unknown as typeof fetch });
+    const result = await loader.loadAsset({ uri: "   ", type: "glb" });
+    expect(result.fallback).toBe(true);
+    expect(result.error).toBe("Asset URI is empty");
+    expect(result.uri).toBe(GRAPHICS_ASSET_FALLBACKS.glb);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });
 
 describe("companion quality policy", () => {

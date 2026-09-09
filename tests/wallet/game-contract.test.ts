@@ -43,6 +43,20 @@ describe("game contract view decoding", () => {
   it("rejects incomplete payloads instead of inventing match state", () => {
     expect(() => decodeMatchView([])).toThrow("Invalid match payload");
     expect(() => decodeMatchView(null)).toThrow("Invalid match payload");
+    const recovered = decodeMatchView([
+      1n,
+      [],
+      1n,
+      2n,
+      "not-a-status",
+      "nope",
+      "not-a-token",
+      0n,
+      0n,
+    ]);
+    expect(recovered.status).toBe(0);
+    expect(recovered.winner).toBe(0);
+    expect(recovered.prizePool).toBe("0");
   });
 
   it("formats FZONE amounts and treats invalid values as zero", () => {

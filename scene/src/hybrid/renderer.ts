@@ -7,6 +7,7 @@ import { POINTER_MAX_DISTANCE } from '../logic/mobileRuntime'
 import { emitWorldEvent } from '../systems/messageBus'
 import { cloud, gold, midnight, moon, sun } from '../palette'
 import { box, sphere } from '../entities/primitives'
+import { SceneErrorHandler } from '../systems/errorHandling'
 import { MAX_EVENTS, MAX_QUESTS, MAX_ROOMS_ON_BOARD, MAX_VISIBLE_PLAYERS } from './constants'
 import { formatEventBoard, formatRoomDiscoveryBoard, formatScoreboardText } from './boards'
 import type { HybridWorldDataset, WorldEventDemo, WorldMissionDemo, WorldPlayerDemo, WorldPortalDemo } from './types'
@@ -155,41 +156,67 @@ function createTextBoard(title: string, body: string, position: { x: number; y: 
 
 export function updateHybridScoreboard(dataset: HybridWorldDataset): void {
   if (!scoreboardText) return
-  TextShape.getMutable(scoreboardText).text = formatScoreboardText(dataset.scoreboard)
+  try {
+    TextShape.getMutable(scoreboardText).text = formatScoreboardText(dataset.scoreboard)
+  } catch (error) {
+    SceneErrorHandler.getInstance().recordFault('Hybrid scoreboard update failed', error)
+  }
 }
 
 export function assembleHybridWorld(dataset: HybridWorldDataset): void {
+  const place = (label: string, run: () => void) => {
+    try {
+      run()
+    } catch (error) {
+      SceneErrorHandler.getInstance().recordFault(label, error)
+    }
+  }
+
   dataset.players.slice(0, MAX_VISIBLE_PLAYERS).forEach((player) => {
-    createHybridAvatar(player)
+    place(`Hybrid avatar ${player.displayName}`, () => {
+      createHybridAvatar(player)
+    })
   })
 
   dataset.events.slice(0, MAX_EVENTS).forEach((event) => {
-    createEventPedestal(event)
+    place(`Hybrid event ${event.title}`, () => {
+      createEventPedestal(event)
+    })
   })
 
   dataset.missions.slice(0, MAX_QUESTS).forEach((mission) => {
-    createQuestMarker(mission)
+    place(`Hybrid mission ${mission.title}`, () => {
+      createQuestMarker(mission)
+    })
   })
 
   dataset.portals.forEach((portal) => {
-    createDataPortal(portal)
+    place(`Hybrid portal ${portal.title}`, () => {
+      createDataPortal(portal)
+    })
   })
 
-  scoreboardText = createTextBoard(
-    'ARENA SCOREBOARD',
-    formatScoreboardText(dataset.scoreboard),
-    { x: 16, y: 0, z: 13.2 },
-  )
-
-  createTextBoard('ROOM DISCOVERY', formatRoomDiscoveryBoard(dataset.rooms.slice(0, MAX_ROOMS_ON_BOARD)), {
-    x: 9.4,
-    y: 0,
-    z: 27.2,
+  place('Hybrid scoreboard', () => {
+    scoreboardText = createTextBoard(
+      'ARENA SCOREBOARD',
+      formatScoreboardText(dataset.scoreboard),
+      { x: 16, y: 0, z: 13.2 },
+    )
   })
 
-  createTextBoard('UPCOMING EVENTS', formatEventBoard(dataset.events.slice(0, MAX_EVENTS)), {
-    x: 22.6,
-    y: 0,
-    z: 27.2,
+  place('Hybrid room discovery', () => {
+    createTextBoard('ROOM DISCOVERY', formatRoomDiscoveryBoard(dataset.rooms.slice(0, MAX_ROOMS_ON_BOARD)), {
+      x: 9.4,
+      y: 0,
+      z: 27.2,
+    })
+  })
+
+  place('Hybrid event board', () => {
+    createTextBoard('UPCOMING EVENTS', formatEventBoard(dataset.events.slice(0, MAX_EVENTS)), {
+      x: 22.6,
+      y: 0,
+      z: 27.2,
+    })
   })
 }

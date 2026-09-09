@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { formatAddress, formatBalance, formatWalletModeBadge, getNativeSymbol, getNetworkName, parseChainId, toHexChainId } from "../lib/web3/format";
-import { DEMO_ACCOUNT, formatWalletError, resolveConnectStrategy, shouldFallbackToDemo } from "../lib/web3/session";
+import { formatWalletError, shouldFallbackToDemo } from "../lib/web3/errors";
+import { DEMO_ACCOUNT, resolveConnectStrategy } from "../lib/web3/session";
 import { decodeMatchView, formatMatchStatus } from "../lib/web3/match";
 
 describe("wallet presentation helpers", () => {

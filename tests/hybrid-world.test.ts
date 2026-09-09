@@ -18,8 +18,11 @@ import {
   formatRoomHud,
   formatScoreboardText,
   parseWorldFeed,
+  parseWorldSyncPacket,
   projectWorldToMobile2D,
   resolveDecentralandWorldUrl,
+  isDecentralandWorldUrl,
+  createEmptyHybridWorldDataset,
   scaleMapX,
   scaleMapY,
   serializeWorldFeed,
@@ -100,6 +103,31 @@ describe("protocol and simulation", () => {
     expect(parsed?.source).toBe("mobile-2d");
     expect(parsed?.dataset.rooms[0]?.code).toBe("731XZ");
     expect(parseWorldFeed("not-json")).toBeNull();
+    expect(parseWorldFeed("")).toBeNull();
+    expect(parseWorldFeed(JSON.stringify({ protocolVersion: 99, source: "mobile-2d", dataset }))).toBeNull();
+    expect(parseWorldFeed(JSON.stringify({ protocolVersion: 1, source: "mobile-2d" }))).toBeNull();
+  });
+
+  it("rejects malformed sync packets and sanitizes rope/score values", () => {
+    const dataset = createHybridWorldDataset();
+    const state = simulationFromDataset(dataset);
+    expect(parseWorldSyncPacket("{")).toBeNull();
+    expect(parseWorldSyncPacket({ protocolVersion: 1, roomId: "", source: "shared", phase: "active" })).toBeNull();
+    expect(applyWorldSyncPacket(dataset, { ...createWorldSyncPacket(state), phase: "nope" as never })).toEqual(dataset);
+
+    const sanitized = parseWorldSyncPacket({
+      protocolVersion: 1,
+      source: "world-3d",
+      roomId: state.roomId,
+      phase: "active",
+      ropePosition: 4,
+      sunScore: -12,
+      moonScore: Number.NaN,
+      highlightedPlayerId: "player_0",
+    });
+    expect(sanitized?.ropePosition).toBe(1);
+    expect(sanitized?.sunScore).toBe(0);
+    expect(sanitized?.moonScore).toBe(0);
   });
 
   it("applies a tiny sync packet onto room and scoreboard state", () => {
@@ -119,6 +147,7 @@ describe("protocol and simulation", () => {
     expect(first).toEqual(second);
     expect(first.elapsedSeconds).toBe(1);
     expect(first.ropePosition).not.toBe(started.ropePosition);
+    expect(tickHybridSimulation(started, dataset, Number.NaN)).toEqual(started);
   });
 });
 
@@ -149,5 +178,8 @@ describe("scenarios, map, and boards", () => {
   it("falls back to the public plaza URL when no World URL is set", () => {
     expect(resolveDecentralandWorldUrl("")).toContain("play.decentraland.org");
     expect(resolveDecentralandWorldUrl("https://worlds.example/tug")).toBe("https://worlds.example/tug");
+    expect(isDecentralandWorldUrl("javascript:alert(1)")).toBe(false);
+    expect(resolveDecentralandWorldUrl("javascript:alert(1)")).toContain("play.decentraland.org");
+    expect(createEmptyHybridWorldDataset().rooms).toEqual([]);
   });
 });

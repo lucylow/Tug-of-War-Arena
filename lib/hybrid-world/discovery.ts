@@ -1,7 +1,8 @@
 import type { DiscoveryResult, HybridWorldDataset, Team, WorldPlayerDemo } from "./types";
 
 export function selectDiscoverablePlayers(dataset: HybridWorldDataset): WorldPlayerDemo[] {
-  return [...dataset.players]
+  const players = Array.isArray(dataset?.players) ? dataset.players : [];
+  return [...players]
     .filter((player) => player.presence !== "offline")
     .sort((left, right) => Number(right.isHighlighted) - Number(left.isHighlighted));
 }
@@ -11,7 +12,8 @@ export function discoverWorld(dataset: HybridWorldDataset, team: Team = "sun"): 
     .filter((player) => player.team === team || player.isHighlighted)
     .slice(0, 6);
 
-  const publicRooms = dataset.rooms.filter((room) => room.phase !== "finished").slice(0, 4);
+  const rooms = Array.isArray(dataset?.rooms) ? dataset.rooms : [];
+  const publicRooms = rooms.filter((room) => room.phase !== "finished").slice(0, 4);
 
   return {
     nearbyPlayers,
