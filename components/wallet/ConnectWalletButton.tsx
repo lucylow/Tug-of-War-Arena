@@ -4,7 +4,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "rea
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
 import { WalletMark } from "@/components/wallet/WalletMark";
 import { useBlockchain } from "@/hooks/use-blockchain";
-import { formatWalletError } from "@/lib/web3/errors";
+import { classifyWalletError, formatWalletError, formatWalletErrorTitle } from "@/lib/web3/errors";
 import { formatWalletModeBadge } from "@/lib/web3/format";
 import type { ConnectionMode, ConnectModeRequest } from "@/lib/web3/types";
 
@@ -33,7 +33,7 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
                 })
                 .catch((error) => {
                   const message = formatWalletError(error);
-                  Alert.alert("Disconnect Failed", message);
+                  Alert.alert(formatWalletErrorTitle(error), message);
                   onStatus?.({ connected: false, mode: null, message });
                 });
             },
@@ -49,7 +49,8 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
       });
     } catch (error) {
       const message = formatWalletError(error);
-      Alert.alert("Connection Failed", message);
+      if (__DEV__) console.warn("Connect wallet failed:", classifyWalletError(error), message, error);
+      Alert.alert(formatWalletErrorTitle(error), message);
       onStatus?.({ connected: false, mode: null, message });
     }
   };

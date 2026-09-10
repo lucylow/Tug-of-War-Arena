@@ -5,7 +5,7 @@ import { DemoModeManager } from "@/lib/mock/DemoModeManager";
 import { DEFAULT_CHAIN_ID } from "@/lib/web3/config";
 import { connectLiveSession, disconnectLiveSession } from "@/lib/web3/client";
 import { getInjectedProvider } from "@/lib/web3/detect";
-import { shouldFallbackToDemo, toUserFacingError, toWalletError } from "@/lib/web3/errors";
+import { formatWalletError, shouldFallbackToDemo, toUserFacingError, toWalletError } from "@/lib/web3/errors";
 import { parseChainId } from "@/lib/web3/format";
 import { DEMO_ACCOUNT } from "@/lib/web3/session";
 import { switchEthereumChain } from "@/lib/web3/switch-chain";
@@ -130,13 +130,17 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         void WalletService.getInstance().disconnect();
         return;
       }
-      void applyLiveSession(ethProvider, nextAccount, chainIdRef.current ?? nextChainId);
+      void applyLiveSession(ethProvider, nextAccount, chainIdRef.current ?? nextChainId).catch((error) => {
+        if (__DEV__) console.warn("MetaMask account update failed:", formatWalletError(error), error);
+      });
     };
     const onChain = (...args: unknown[]) => {
       const next = parseChainId(typeof args[0] === "string" || typeof args[0] === "number" || typeof args[0] === "bigint" ? args[0] : String(args[0] ?? ""));
       if (next == null) return;
       const currentAccount = accountRef.current ?? address;
-      void applyLiveSession(ethProvider, currentAccount, next);
+      void applyLiveSession(ethProvider, currentAccount, next).catch((error) => {
+        if (__DEV__) console.warn("MetaMask network update failed:", formatWalletError(error), error);
+      });
     };
     const onDisconnect = () => {
       clearSession();
@@ -159,10 +163,11 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       try {
         const live = await connectLiveSession();
         const address = live.accounts[0];
-        if (!address) throw new Error("No accounts returned");
+        if (!address) throw new Error("No accounts returned. Unlock MetaMask and select an account.");
         await applyLiveSession(live.provider, address, parseChainId(live.chainId) ?? DEFAULT_CHAIN_ID);
         return "live" as const;
       } catch (error) {
+        if (__DEV__) console.warn("Wallet connect failed:", formatWalletError(error), error);
         if (requested === "live" || !shouldFallbackToDemo(error)) {
           throw toWalletError(error);
         }
@@ -275,8 +280,8 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         if (cancelled || !accounts?.[0]) return;
         const rawChainId = (await injected.request({ method: "eth_chainId" })) as string;
         await applyLiveSession(injected, accounts[0], parseChainId(rawChainId) ?? DEFAULT_CHAIN_ID);
-      } catch {
-        // Stay disconnected until the user taps Connect.
+      } catch (error) {
+        if (__DEV__) console.warn("MetaMask session restore skipped:", formatWalletError(error), error);
       }
     })();
     return () => {

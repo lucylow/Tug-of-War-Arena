@@ -37,8 +37,10 @@ export { WalletService } from "./WalletService";
 export type { WalletInfo } from "./WalletService";
 export {
   classifyContractError,
+  classifyWalletError,
   formatContractError,
   formatWalletError,
+  formatWalletErrorTitle,
   isConnectivityFailure,
   isContractRevert,
   isPendingRequest,

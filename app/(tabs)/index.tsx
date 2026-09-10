@@ -29,6 +29,7 @@ import { MultiplayerHub } from "@/components/multiplayer";
 import { useHybridWorld } from "@/hooks/use-hybrid-world";
 import { resolveDecentralandWorldUrl } from "@/lib/hybrid-world";
 import { useBlockchain } from "@/hooks/use-blockchain";
+import { formatWalletError } from "@/lib/web3/errors";
 import { getPlayerId, LeaderboardService, recordFinishedMatch, reportLocalPull, resetMultiplayer } from "@/lib/multiplayer";
 
 import { applyOpponentPressure, canInteractWithArena, resolveArenaOutcome, resolveTimeoutWinner } from "@/lib/game-rules";
@@ -1129,7 +1130,7 @@ export default function HomeScreen() {
       setJudgeWalkthroughFeedback(nextMode === "live" ? "MetaMask connected · local receipt ready" : "Demo wallet connected · local receipt ready");
       announce(nextMode === "live" ? "MetaMask connected. Local reward receipt is ready." : "Demo wallet connected. Local reward receipt is ready.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to connect wallet. Please try again.";
+      const message = formatWalletError(error);
       setJudgeWalkthroughFeedback(message);
       announce(message);
     }
