@@ -18,11 +18,15 @@ import {
   formatRoomHud,
   formatScoreboardText,
   parseWorldFeed,
+  parseWorldFeedOrFallback,
   parseWorldSyncPacket,
   projectWorldToMobile2D,
   resolveDecentralandWorldUrl,
   isDecentralandWorldUrl,
   createEmptyHybridWorldDataset,
+  createFallbackHybridWorldDataset,
+  createHybridWorldDatasetSafe,
+  normalizeHybridWorldDataset,
   scaleMapX,
   scaleMapY,
   serializeWorldFeed,
@@ -181,5 +185,56 @@ describe("scenarios, map, and boards", () => {
     expect(isDecentralandWorldUrl("javascript:alert(1)")).toBe(false);
     expect(resolveDecentralandWorldUrl("javascript:alert(1)")).toContain("play.decentraland.org");
     expect(createEmptyHybridWorldDataset().rooms).toEqual([]);
+  });
+});
+
+describe("mock data fallback", () => {
+  it("keeps a populated plaza when generation or live data is missing", () => {
+    const fallback = createFallbackHybridWorldDataset();
+    expect(fallback.players[0]?.displayName).toBe("NovaWisp");
+    expect(fallback.rooms[0]).toMatchObject({ code: "731XZ", title: "Friday Night Pull", featured: true });
+    expect(createHybridWorldDatasetSafe().rooms.length).toBeGreaterThan(0);
+
+    const recovered = normalizeHybridWorldDataset({ protocolVersion: 1 } as never);
+    expect(recovered.rooms[0]?.code).toBe("731XZ");
+    expect(recovered.scoreboard.sunCrewLabel).toBe("SUN CREW");
+
+    const partial = normalizeHybridWorldDataset({
+      protocolVersion: 1,
+      players: [{ id: "ghost" }],
+      rooms: [{ id: "room_x" }],
+    } as never);
+    expect(partial.players[0]?.displayName).toBe("NovaWisp");
+    expect(partial.players[0]?.spawn.x).toBeGreaterThan(0);
+    expect(partial.rooms[0]?.code).toBe("731XZ");
+    expect(scaleMapX(Number.NaN)).toBeGreaterThan(7);
+    expect(scaleMapY(Number.NaN)).toBeGreaterThan(8);
+  });
+
+  it("projects and discovers from malformed payloads instead of throwing", () => {
+    const projection = projectWorldToMobile2D(null);
+    expect(projection.heroRoom?.code).toBe("731XZ");
+    expect(projection.nearbyPlayers.length).toBeGreaterThan(0);
+    expect(projection.scoreboard.sunScore).toBeGreaterThan(0);
+
+    const discovery = discoverWorld({ rooms: null, players: undefined } as never, "sun");
+    expect(discovery.recommendedRoom?.featured).toBe(true);
+    expect(discovery.nearbyPlayers.length).toBeGreaterThan(0);
+  });
+
+  it("formats boards with mock copy when source data is empty", () => {
+    expect(formatScoreboardText(undefined)).toContain("SUN CREW");
+    expect(formatRoomDiscoveryBoard(undefined)).toContain("731XZ");
+    expect(formatEventBoard([])).toContain("Friendzone Friday");
+    expect(formatRoomHud(null)).toContain("731XZ");
+    expect(tickHybridSimulation(null, null, 1).roomId).toBe("room_friday");
+  });
+
+  it("rebuilds a feed envelope from mock data when the payload is unusable", () => {
+    const recovered = parseWorldFeedOrFallback("not-json");
+    expect(recovered.protocolVersion).toBe(1);
+    expect(recovered.dataset.rooms[0]?.code).toBe("731XZ");
+    expect(parseWorldFeed("not-json")).toBeNull();
+    expect(createWorldSyncPacket(null).roomId).toBe("room_friday");
   });
 });

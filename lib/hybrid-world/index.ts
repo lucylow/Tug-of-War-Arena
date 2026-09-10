@@ -48,9 +48,11 @@ export { SeededWorldRandom } from "./seed";
 export {
   calculateMetrics,
   createEmptyHybridWorldDataset,
+  createFallbackHybridWorldDataset,
   createHybridWorldDataset,
   createHybridWorldDatasetSafe,
   createScoreboard,
+  normalizeHybridWorldDataset,
 } from "./generator";
 export { projectWorldToMobile2D } from "./projection";
 export { discoverWorld, selectDiscoverablePlayers } from "./discovery";
@@ -58,6 +60,7 @@ export {
   applyWorldSyncPacket,
   createWorldSyncPacket,
   parseWorldFeed,
+  parseWorldFeedOrFallback,
   parseWorldSyncPacket,
   serializeWorldFeed,
   simulationFromDataset,

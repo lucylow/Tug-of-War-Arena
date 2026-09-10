@@ -1,24 +1,37 @@
 import { MAX_QUESTS, MAX_RECENT_MATCHES } from "./constants";
+import { createFallbackHybridWorldDataset, normalizeHybridWorldDataset } from "./generator";
 import type { HybridWorldDataset, MobileWorldProjection } from "./types";
 
-export function projectWorldToMobile2D(dataset: HybridWorldDataset): MobileWorldProjection {
-  const rooms = Array.isArray(dataset?.rooms) ? dataset.rooms : [];
-  const players = Array.isArray(dataset?.players) ? dataset.players : [];
-  const events = Array.isArray(dataset?.events) ? dataset.events : [];
-  const missions = Array.isArray(dataset?.missions) ? dataset.missions : [];
-  const matches = Array.isArray(dataset?.matches) ? dataset.matches : [];
-  const socialSignals = Array.isArray(dataset?.socialSignals) ? dataset.socialSignals : [];
-  return {
-    heroRoom: rooms.find((room) => room.featured) ?? rooms[0] ?? null,
-    nearbyPlayers: players.filter((player) => player.presence !== "offline").slice(0, 8),
-    upcomingEvents: events.slice(0, 4),
-    missions: missions.slice(0, MAX_QUESTS).slice(0, 4),
-    recentMatches: matches.slice(0, MAX_RECENT_MATCHES),
-    socialSignals: socialSignals.slice(0, 8),
-    portals: Array.isArray(dataset?.portals) ? dataset.portals : [],
-    scoreboard: dataset.scoreboard,
-    metrics: dataset.metrics,
-    generatedAt: dataset.generatedAt,
-    mode: dataset.mode,
-  };
+export function projectWorldToMobile2D(dataset: HybridWorldDataset | null | undefined): MobileWorldProjection {
+  try {
+    const world = normalizeHybridWorldDataset(dataset);
+    return {
+      heroRoom: world.rooms.find((room) => room.featured) ?? world.rooms[0] ?? null,
+      nearbyPlayers: world.players.filter((player) => player.presence !== "offline").slice(0, 8),
+      upcomingEvents: world.events.slice(0, 4),
+      missions: world.missions.slice(0, MAX_QUESTS).slice(0, 4),
+      recentMatches: world.matches.slice(0, MAX_RECENT_MATCHES),
+      socialSignals: world.socialSignals.slice(0, 8),
+      portals: world.portals,
+      scoreboard: world.scoreboard,
+      metrics: world.metrics,
+      generatedAt: world.generatedAt,
+      mode: world.mode,
+    };
+  } catch {
+    const fallback = createFallbackHybridWorldDataset();
+    return {
+      heroRoom: fallback.rooms[0] ?? null,
+      nearbyPlayers: fallback.players,
+      upcomingEvents: fallback.events.slice(0, 4),
+      missions: fallback.missions.slice(0, 4),
+      recentMatches: fallback.matches.slice(0, MAX_RECENT_MATCHES),
+      socialSignals: fallback.socialSignals.slice(0, 8),
+      portals: fallback.portals,
+      scoreboard: fallback.scoreboard,
+      metrics: fallback.metrics,
+      generatedAt: fallback.generatedAt,
+      mode: fallback.mode,
+    };
+  }
 }

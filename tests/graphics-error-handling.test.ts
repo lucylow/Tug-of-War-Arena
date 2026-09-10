@@ -144,6 +144,18 @@ describe("asset loader recovery", () => {
     expect(result.uri).toBe(GRAPHICS_ASSET_FALLBACKS.glb);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
+
+  it("falls back after an invalid fetch payload", async () => {
+    const fetchImpl = vi.fn(async () => "nope");
+    const loader = new AssetLoader({
+      retryCount: 0,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    const result = await loader.loadAsset({ uri: "https://cdn.example.com/rope.glb", type: "glb" });
+    expect(result.fallback).toBe(true);
+    expect(result.uri).toBe(GRAPHICS_ASSET_FALLBACKS.glb);
+    expect(result.error).toContain("invalid response");
+  });
 });
 
 describe("companion quality policy", () => {

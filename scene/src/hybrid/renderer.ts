@@ -9,6 +9,7 @@ import { cloud, gold, midnight, moon, sun } from '../palette'
 import { box, sphere } from '../entities/primitives'
 import { SceneErrorHandler } from '../systems/errorHandling'
 import { MAX_EVENTS, MAX_QUESTS, MAX_ROOMS_ON_BOARD, MAX_VISIBLE_PLAYERS } from './constants'
+import { createFallbackHybridWorldDataset, normalizeHybridWorldDataset } from './generator'
 import { formatEventBoard, formatRoomDiscoveryBoard, formatScoreboardText } from './boards'
 import type { HybridWorldDataset, WorldEventDemo, WorldMissionDemo, WorldPlayerDemo, WorldPortalDemo } from './types'
 
@@ -62,32 +63,57 @@ export function hybridLabel(
   return entity
 }
 
+function spawnOf(player: HybridAvatarInput): { x: number; y: number; z: number } {
+  const spawn = player?.spawn
+  const x = Number(spawn?.x)
+  const y = Number(spawn?.y)
+  const z = Number(spawn?.z)
+  return {
+    x: Number.isFinite(x) ? x : 16,
+    y: Number.isFinite(y) ? y : 0.85,
+    z: Number.isFinite(z) ? z : 16,
+  }
+}
+
 export function createHybridAvatar(player: HybridAvatarInput): Entity {
+  const spawn = spawnOf(player)
   const color = player.team === 'sun' ? HYBRID_3D_COLORS.sun : HYBRID_3D_COLORS.moon
   const avatar = hybridSphere(
-    Vector3.create(player.spawn.x, player.spawn.y, player.spawn.z),
+    Vector3.create(spawn.x, spawn.y, spawn.z),
     Vector3.create(0.42, 0.72, 0.42),
     color,
   )
-  addAmbientMotion(avatar, 0.06, 0.55, (player.avatarHue * Math.PI) / 180, player.spawn.y)
+  addAmbientMotion(avatar, 0.06, 0.55, ((Number(player.avatarHue) || 0) * Math.PI) / 180, spawn.y)
   hybridLabel(
-    `${player.displayName}\n${player.presence.toUpperCase()} · L${player.level}`,
-    Vector3.create(player.spawn.x, 1.75, player.spawn.z),
+    `${player.displayName || 'Crewmate'}\n${String(player.presence || 'online').toUpperCase()} · L${player.level || 1}`,
+    Vector3.create(spawn.x, 1.75, spawn.z),
     0.19,
     HYBRID_3D_COLORS.white,
   )
   return avatar
 }
 
+function positionOf(value: { x?: number; y?: number; z?: number } | null | undefined, fallback: { x: number; y: number; z: number }) {
+  const x = Number(value?.x)
+  const y = Number(value?.y)
+  const z = Number(value?.z)
+  return {
+    x: Number.isFinite(x) ? x : fallback.x,
+    y: Number.isFinite(y) ? y : fallback.y,
+    z: Number.isFinite(z) ? z : fallback.z,
+  }
+}
+
 function createEventPedestal(event: WorldEventDemo): Entity {
+  const position = positionOf(event.position, { x: 16, y: 0.35, z: 22 })
   const pedestal = hybridBox(
-    Vector3.create(event.position.x, event.position.y, event.position.z),
+    Vector3.create(position.x, position.y, position.z),
     Vector3.create(1.8, 0.35, 1.2),
     HYBRID_3D_COLORS.purple,
   )
   hybridLabel(
-    `${event.title}\n${event.kind.toUpperCase()} · ${event.startsInMinutes}m`,
-    Vector3.create(event.position.x, event.position.y + 0.9, event.position.z),
+    `${event.title || 'Event'}\n${String(event.kind || 'match').toUpperCase()} · ${Number(event.startsInMinutes) || 0}m`,
+    Vector3.create(position.x, position.y + 0.9, position.z),
     0.18,
     HYBRID_3D_COLORS.white,
   )
@@ -95,39 +121,41 @@ function createEventPedestal(event: WorldEventDemo): Entity {
 }
 
 function createQuestMarker(quest: WorldMissionDemo): void {
-  const progress = Math.min(1, quest.progress / Math.max(1, quest.target))
+  const position = positionOf(quest.position, { x: 16, y: 0.42, z: 12 })
+  const progress = Math.min(1, Number(quest.progress) / Math.max(1, Number(quest.target) || 1))
   hybridBox(
-    Vector3.create(quest.position.x, quest.position.y, quest.position.z),
+    Vector3.create(position.x, position.y, position.z),
     Vector3.create(2.3, 0.22, 0.8),
     HYBRID_3D_COLORS.dark,
   )
   hybridBox(
     Vector3.create(
-      quest.position.x - 1.05 + progress * 1.05,
-      quest.position.y + 0.02,
-      quest.position.z - 0.02,
+      position.x - 1.05 + progress * 1.05,
+      position.y + 0.02,
+      position.z - 0.02,
     ),
     Vector3.create(Math.max(0.08, 2.1 * progress), 0.18, 0.62),
     HYBRID_3D_COLORS.gold,
   )
   hybridLabel(
-    `${quest.title}\n${quest.progress}/${quest.target}`,
-    Vector3.create(quest.position.x, quest.position.y + 0.7, quest.position.z),
+    `${quest.title || 'Quest'}\n${Number(quest.progress) || 0}/${Number(quest.target) || 1}`,
+    Vector3.create(position.x, position.y + 0.7, position.z),
     0.16,
     HYBRID_3D_COLORS.white,
   )
 }
 
 function createDataPortal(prop: WorldPortalDemo): Entity {
+  const position = positionOf(prop.position, { x: 16, y: 0, z: 8.8 })
   const color =
     prop.target === 'arena' ? sun : prop.target === 'governance' ? gold : prop.target === 'rooms' ? HYBRID_3D_COLORS.purple : moon
   const portal = hybridBox(
-    Vector3.create(prop.position.x, prop.position.y + 1.65, prop.position.z),
+    Vector3.create(position.x, position.y + 1.65, position.z),
     Vector3.create(2.1, 3.3, 0.3),
     color,
     true,
   )
-  hybridLabel(prop.title, Vector3.create(prop.position.x, prop.position.y + 3.5, prop.position.z), 0.2, cloud)
+  hybridLabel(prop.title || 'Portal', Vector3.create(position.x, position.y + 3.5, position.z), 0.2, cloud)
   setupInteraction(
     portal,
     () => {
@@ -157,13 +185,20 @@ function createTextBoard(title: string, body: string, position: { x: number; y: 
 export function updateHybridScoreboard(dataset: HybridWorldDataset): void {
   if (!scoreboardText) return
   try {
-    TextShape.getMutable(scoreboardText).text = formatScoreboardText(dataset.scoreboard)
+    const world = normalizeHybridWorldDataset(dataset)
+    TextShape.getMutable(scoreboardText).text = formatScoreboardText(world.scoreboard)
   } catch (error) {
     SceneErrorHandler.getInstance().recordFault('Hybrid scoreboard update failed', error)
+    try {
+      TextShape.getMutable(scoreboardText).text = formatScoreboardText(createFallbackHybridWorldDataset().scoreboard)
+    } catch {
+      // Keep the last readable scoreboard rather than crashing the scene loop.
+    }
   }
 }
 
-export function assembleHybridWorld(dataset: HybridWorldDataset): void {
+export function assembleHybridWorld(dataset: HybridWorldDataset | null | undefined): void {
+  const world = normalizeHybridWorldDataset(dataset)
   const place = (label: string, run: () => void) => {
     try {
       run()
@@ -172,25 +207,25 @@ export function assembleHybridWorld(dataset: HybridWorldDataset): void {
     }
   }
 
-  dataset.players.slice(0, MAX_VISIBLE_PLAYERS).forEach((player) => {
+  world.players.slice(0, MAX_VISIBLE_PLAYERS).forEach((player) => {
     place(`Hybrid avatar ${player.displayName}`, () => {
       createHybridAvatar(player)
     })
   })
 
-  dataset.events.slice(0, MAX_EVENTS).forEach((event) => {
+  world.events.slice(0, MAX_EVENTS).forEach((event) => {
     place(`Hybrid event ${event.title}`, () => {
       createEventPedestal(event)
     })
   })
 
-  dataset.missions.slice(0, MAX_QUESTS).forEach((mission) => {
+  world.missions.slice(0, MAX_QUESTS).forEach((mission) => {
     place(`Hybrid mission ${mission.title}`, () => {
       createQuestMarker(mission)
     })
   })
 
-  dataset.portals.forEach((portal) => {
+  world.portals.forEach((portal) => {
     place(`Hybrid portal ${portal.title}`, () => {
       createDataPortal(portal)
     })
@@ -199,13 +234,13 @@ export function assembleHybridWorld(dataset: HybridWorldDataset): void {
   place('Hybrid scoreboard', () => {
     scoreboardText = createTextBoard(
       'ARENA SCOREBOARD',
-      formatScoreboardText(dataset.scoreboard),
+      formatScoreboardText(world.scoreboard),
       { x: 16, y: 0, z: 13.2 },
     )
   })
 
   place('Hybrid room discovery', () => {
-    createTextBoard('ROOM DISCOVERY', formatRoomDiscoveryBoard(dataset.rooms.slice(0, MAX_ROOMS_ON_BOARD)), {
+    createTextBoard('ROOM DISCOVERY', formatRoomDiscoveryBoard(world.rooms.slice(0, MAX_ROOMS_ON_BOARD)), {
       x: 9.4,
       y: 0,
       z: 27.2,
@@ -213,7 +248,7 @@ export function assembleHybridWorld(dataset: HybridWorldDataset): void {
   })
 
   place('Hybrid event board', () => {
-    createTextBoard('UPCOMING EVENTS', formatEventBoard(dataset.events.slice(0, MAX_EVENTS)), {
+    createTextBoard('UPCOMING EVENTS', formatEventBoard(world.events.slice(0, MAX_EVENTS)), {
       x: 22.6,
       y: 0,
       z: 27.2,

@@ -2,14 +2,18 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { DemoModeManager } from "../../lib/mock/DemoModeManager";
 import {
+  fallbackArenaMatchView,
+  fallbackArenaPlayerView,
   findMockMatch,
   MOCK_FALLBACK_COPY,
   mockMatchReceipt,
   noteMockFallback,
   requireMockMatch,
+  resolveMockMatchView,
   runLiveOrMock,
   shouldUseMockFallback,
   toArenaMatchView,
+  toArenaPlayerView,
   withMockFallback,
 } from "../../lib/mock/fallback";
 import { generateQuests, generateUsers } from "../../lib/mock/generators";
@@ -125,5 +129,17 @@ describe("mock error fallback", () => {
     expect(friends.some((friend) => friend.displayName === "NovaNina")).toBe(true);
     const feed = await SocialAPI.getFeed(1);
     expect(feed.items.length).toBeGreaterThan(3);
+  });
+
+  it("invents a local match view when the seeded match list has no id", () => {
+    expect(resolveMockMatchView([], 42)).toMatchObject({
+      id: "42",
+      players: ["user_0", "user_1"],
+      status: 1,
+      sunPower: "12",
+    });
+    expect(fallbackArenaMatchView(7).id).toBe("7");
+    expect(fallbackArenaPlayerView("0xabc").wallet).toBe("0xabc");
+    expect(toArenaPlayerView(null).displayName).toBe("CrewLead");
   });
 });

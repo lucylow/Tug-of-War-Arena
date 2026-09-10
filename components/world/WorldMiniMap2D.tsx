@@ -9,7 +9,9 @@ type Props = {
 };
 
 export function WorldMiniMap2D({ dataset }: Props) {
-  const players = dataset.players.filter((player) => player.presence !== "offline").slice(0, 18);
+  const players = Array.isArray(dataset?.players)
+    ? dataset.players.filter((player) => player?.presence !== "offline").slice(0, 18)
+    : [];
 
   return (
     <View
@@ -20,15 +22,15 @@ export function WorldMiniMap2D({ dataset }: Props) {
       <View pointerEvents="none" style={styles.sunZone} {...hideFromA11y()} />
       <View pointerEvents="none" style={styles.moonZone} {...hideFromA11y()} />
       <View pointerEvents="none" style={styles.arena} {...hideFromA11y()} />
-      {players.map((player) => (
+      {players.map((player, index) => (
         <View
-          key={player.id}
+          key={player.id || `player_${index}`}
           pointerEvents="none"
           style={[
             styles.playerMarker,
             {
-              left: `${scaleMapX(player.spawn.x)}%`,
-              top: `${scaleMapY(player.spawn.z)}%`,
+              left: `${scaleMapX(player.spawn?.x)}%`,
+              top: `${scaleMapY(player.spawn?.z)}%`,
               backgroundColor: player.team === "sun" ? C.coral : C.cyan,
               borderColor: player.isHighlighted ? C.gold : "transparent",
             },

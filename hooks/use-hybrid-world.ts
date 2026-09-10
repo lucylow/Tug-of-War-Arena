@@ -3,8 +3,8 @@ import * as Linking from "expo-linking";
 
 import {
   applyDemoScenario,
-  createEmptyHybridWorldDataset,
-  createHybridWorldDataset,
+  createFallbackHybridWorldDataset,
+  createHybridWorldDatasetSafe,
   discoverWorld,
   isDecentralandWorldUrl,
   projectWorldToMobile2D,
@@ -16,10 +16,10 @@ import {
 
 function loadDataset(scenario: DemoScenario): { dataset: HybridWorldDataset; error: string | null } {
   try {
-    return { dataset: applyDemoScenario(createHybridWorldDataset(), scenario), error: null };
+    return { dataset: applyDemoScenario(createHybridWorldDatasetSafe(), scenario), error: null };
   } catch (error) {
     return {
-      dataset: applyDemoScenario(createEmptyHybridWorldDataset(), scenario),
+      dataset: applyDemoScenario(createFallbackHybridWorldDataset(), scenario),
       error: error instanceof Error ? error.message : "Demo universe failed to generate",
     };
   }
@@ -74,7 +74,7 @@ export function useHybridWorld(initialScenario: DemoScenario = "active-match") {
     setScenario,
     team,
     setTeam,
-    status,
+    status: loaded.error ? "Showing seeded mock universe" : status,
     error: error ?? loaded.error,
     refresh,
     openWorld,

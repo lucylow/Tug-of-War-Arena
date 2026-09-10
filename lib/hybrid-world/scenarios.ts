@@ -1,4 +1,4 @@
-import { calculateMetrics, createScoreboard } from "./generator";
+import { calculateMetrics, createFallbackHybridWorldDataset, createScoreboard } from "./generator";
 import type { DemoScenario, HybridWorldDataset, WorldPresence } from "./types";
 
 function withPresence(dataset: HybridWorldDataset, presence: WorldPresence): HybridWorldDataset {
@@ -13,70 +13,83 @@ function withPresence(dataset: HybridWorldDataset, presence: WorldPresence): Hyb
   };
 }
 
-export function applyDemoScenario(dataset: HybridWorldDataset, scenario: DemoScenario): HybridWorldDataset {
+export function applyDemoScenario(dataset: HybridWorldDataset | null | undefined, scenario: DemoScenario): HybridWorldDataset {
+  const source =
+    dataset && typeof dataset === "object"
+      ? {
+          ...dataset,
+          players: Array.isArray(dataset.players) ? dataset.players : [],
+          rooms: Array.isArray(dataset.rooms) ? dataset.rooms : [],
+          events: Array.isArray(dataset.events) ? dataset.events : [],
+          missions: Array.isArray(dataset.missions) ? dataset.missions : [],
+          matches: Array.isArray(dataset.matches) ? dataset.matches : [],
+          socialSignals: Array.isArray(dataset.socialSignals) ? dataset.socialSignals : [],
+        }
+      : createFallbackHybridWorldDataset();
+
   if (scenario === "fresh") {
-    const rooms = dataset.rooms.map((room, index) => ({
+    const rooms = source.rooms.map((room, index) => ({
       ...room,
       phase: index === 0 ? ("waiting" as const) : room.phase === "finished" ? room.phase : ("waiting" as const),
       sunScore: index === 0 ? 0 : room.sunScore,
       moonScore: index === 0 ? 0 : room.moonScore,
       ropePosition: 0,
     }));
-    const players = dataset.players.map((player, index) => ({
+    const players = source.players.map((player, index) => ({
       ...player,
       presence: index < 4 ? ("online" as const) : ("offline" as const),
     }));
     return {
-      ...dataset,
+      ...source,
       players,
       rooms,
       scoreboard: createScoreboard(rooms, players),
-      metrics: calculateMetrics(players, rooms, dataset.events, dataset.matches, dataset.socialSignals),
+      metrics: calculateMetrics(players, rooms, source.events, source.matches, source.socialSignals),
     };
   }
 
   if (scenario === "busy-plaza") {
-    const players = dataset.players.map((player) => ({ ...player, presence: "online" as const }));
+    const players = source.players.map((player) => ({ ...player, presence: "online" as const }));
     return {
-      ...dataset,
+      ...source,
       players,
-      metrics: calculateMetrics(players, dataset.rooms, dataset.events, dataset.matches, dataset.socialSignals),
+      metrics: calculateMetrics(players, source.rooms, source.events, source.matches, source.socialSignals),
     };
   }
 
   if (scenario === "active-match") {
-    const rooms = dataset.rooms.map((room) =>
+    const rooms = source.rooms.map((room) =>
       room.featured ? { ...room, phase: "active" as const, timeRemaining: Math.max(8, room.timeRemaining) } : room,
     );
     return {
-      ...dataset,
+      ...source,
       rooms,
-      scoreboard: createScoreboard(rooms, dataset.players),
-      metrics: calculateMetrics(dataset.players, rooms, dataset.events, dataset.matches, dataset.socialSignals),
+      scoreboard: createScoreboard(rooms, source.players),
+      metrics: calculateMetrics(source.players, rooms, source.events, source.matches, source.socialSignals),
     };
   }
 
   if (scenario === "mission-ready") {
-    const missions = dataset.missions.map((mission) => ({
+    const missions = source.missions.map((mission) => ({
       ...mission,
       complete: false,
       progress: Math.max(0, mission.target - 1),
     }));
-    return { ...dataset, missions };
+    return { ...source, missions };
   }
 
   if (scenario === "tournament") {
-    const events = dataset.events.map((event) =>
+    const events = source.events.map((event) =>
       event.kind === "tournament" ? { ...event, featured: true, startsInMinutes: 4, participants: 48 } : event,
     );
-    return { ...dataset, events };
+    return { ...source, events };
   }
 
   if (scenario === "offline-companion") {
-    return withPresence(dataset, "offline");
+    return withPresence(source, "offline");
   }
 
-  return dataset;
+  return source;
 }
 
 export const DEMO_SCENARIO_LABELS: Record<DemoScenario, string> = {

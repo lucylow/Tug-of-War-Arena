@@ -3,8 +3,12 @@ import { useCallback, useState } from "react";
 import { useBlockchain } from "@/hooks/use-blockchain";
 import { useContract } from "@/hooks/use-contract";
 import {
+  fallbackArenaMatchView,
+  fallbackArenaPlayerStats,
+  fallbackArenaPlayerView,
+  findMockMatch,
   mockMatchReceipt,
-  requireMockMatch,
+  resolveMockMatchView,
   runLiveOrMock,
   toArenaMatchView,
   toArenaPlayerStats,
@@ -26,15 +30,20 @@ function gameFallbackReason(gameAddress: string): MockFallbackReason {
 }
 
 async function createLocalMatch(mock: MockBlockchain, account: string | null): Promise<ArenaTxResult> {
-  let opponent = "user_1";
   try {
-    opponent = (await mock.getAllUsers())[1]?.id ?? "user_1";
+    let opponent = "user_1";
+    try {
+      opponent = (await mock.getAllUsers())[1]?.id ?? "user_1";
+    } catch {
+      opponent = "user_1";
+    }
+    const match = await mock.createMatch([account ?? "user_0", opponent]);
+    const view = toArenaMatchView(match);
+    return { ...mockMatchReceipt(match), view, matchId: view.id };
   } catch {
-    opponent = "user_1";
+    const view = fallbackArenaMatchView(0);
+    return { hash: "demo_match_fallback", mock: true, matchId: view.id, view };
   }
-  const match = await mock.createMatch([account ?? "user_0", opponent]);
-  const view = toArenaMatchView(match);
-  return { ...mockMatchReceipt(match), view, matchId: view.id };
 }
 
 export function useGameContract() {
@@ -141,12 +150,13 @@ export function useGameContract() {
         Boolean(isConnected && connectionMode === "live"),
         () => approveAndSend("joinMatch", matchId, displayName),
         async (mock) => {
-          const match = requireMockMatch(await mock.getMatches(), matchId);
+          const match = findMockMatch(await mock.getMatches(), matchId);
+          if (!match) return createLocalMatch(mock, account);
           const view = toArenaMatchView(match);
           return { ...mockMatchReceipt(match), view, matchId: view.id };
         },
       ),
-    [approveAndSend, connectionMode, isConnected, run],
+    [account, approveAndSend, connectionMode, isConnected, run],
   );
 
   const getMatch = useCallback(
@@ -157,7 +167,7 @@ export function useGameContract() {
           await requireLiveWallet();
           return decodeMatchView(await call<unknown>("getMatch", matchId));
         },
-        async (mock) => toArenaMatchView(requireMockMatch(await mock.getMatches(), matchId)),
+        async (mock) => resolveMockMatchView(await mock.getMatches(), matchId),
       ),
     [call, live.canUseLiveGame, requireLiveWallet, run],
   );
@@ -170,7 +180,13 @@ export function useGameContract() {
           await requireLiveWallet();
           return String(await call<unknown>("nextMatchId"));
         },
-        async (mock) => String((await mock.getMatches()).length),
+        async (mock) => {
+          try {
+            return String((await mock.getMatches()).length);
+          } catch {
+            return "0";
+          }
+        },
       ),
     [call, live.canUseLiveGame, requireLiveWallet, run],
   );
@@ -183,7 +199,12 @@ export function useGameContract() {
           const receipt = (await send("startMatch", matchId)) as { hash?: string };
           return { hash: receipt?.hash ?? "", matchId: String(matchId) };
         },
-        async (mock) => mockMatchReceipt(requireMockMatch(await mock.getMatches(), matchId)),
+        async (mock) => {
+          const match = findMockMatch(await mock.getMatches(), matchId);
+          return match
+            ? mockMatchReceipt(match)
+            : { hash: `demo_start_${matchId}`, mock: true, matchId: String(matchId), view: fallbackArenaMatchView(matchId) };
+        },
       ),
     [live.canUseLiveGame, run, send],
   );
@@ -217,7 +238,13 @@ export function useGameContract() {
           if (!target) throw new Error("No address provided");
           return decodePlayerInMatch(await call<unknown>("getPlayerInMatch", matchId, target));
         },
-        async (mock) => toArenaPlayerView(await mock.getCurrentUser()),
+        async (mock) => {
+          try {
+            return toArenaPlayerView(await mock.getCurrentUser());
+          } catch {
+            return fallbackArenaPlayerView(account ?? "user_0");
+          }
+        },
       ),
     [account, call, live.canUseLiveGame, run],
   );
@@ -233,7 +260,13 @@ export function useGameContract() {
           const player = matchId != null ? await getPlayerInMatch(matchId, target) : null;
           return decodePlayerStats(elo, player);
         },
-        async (mock) => toArenaPlayerStats(await mock.getCurrentUser()),
+        async (mock) => {
+          try {
+            return toArenaPlayerStats(await mock.getCurrentUser());
+          } catch {
+            return fallbackArenaPlayerStats();
+          }
+        },
       ),
     [account, call, getPlayerInMatch, live.canUseLiveGame, run],
   );

@@ -57,6 +57,7 @@ describe("game contract view decoding", () => {
     expect(recovered.status).toBe(0);
     expect(recovered.winner).toBe(0);
     expect(recovered.prizePool).toBe("0");
+    expect(() => decodePlayerInMatch(null)).toThrow("Invalid player payload");
   });
 
   it("formats FZONE amounts and treats invalid values as zero", () => {

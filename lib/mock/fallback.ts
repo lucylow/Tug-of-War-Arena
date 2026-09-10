@@ -100,21 +100,28 @@ export async function withMockFallback<T>(
 }
 
 export function toArenaMatchView(match: MockMatch): ArenaMatchView {
-  const finished = match.winnerTeam != null;
-  return {
-    id: String(numericMatchId(match)),
-    players: [...match.participants],
-    startTime: String(Math.floor(match.startedAt.getTime() / 1000)),
-    endTime: String(Math.floor(match.endedAt.getTime() / 1000)),
-    status: finished ? 2 : 1,
-    winner: match.winnerTeam === "blue" ? 1 : 0,
-    prizePool: "20.0",
-    sunPower: String(match.redScore),
-    moonPower: String(match.blueScore),
-  };
+  try {
+    const finished = match.winnerTeam != null;
+    const startedAt = match.startedAt instanceof Date ? match.startedAt : new Date(0);
+    const endedAt = match.endedAt instanceof Date ? match.endedAt : startedAt;
+    return {
+      id: String(numericMatchId(match)),
+      players: Array.isArray(match.participants) ? [...match.participants] : ["user_0", "user_1"],
+      startTime: String(Math.floor(startedAt.getTime() / 1000) || 0),
+      endTime: String(Math.floor(endedAt.getTime() / 1000) || 0),
+      status: finished ? 2 : 1,
+      winner: match.winnerTeam === "blue" ? 1 : 0,
+      prizePool: "20.0",
+      sunPower: String(match.redScore ?? 0),
+      moonPower: String(match.blueScore ?? 0),
+    };
+  } catch {
+    return fallbackArenaMatchView(match?.id ?? 0);
+  }
 }
 
-export function toArenaPlayerView(user: MockUser, team = 0, power = 0): ArenaPlayerView {
+export function toArenaPlayerView(user: MockUser | null | undefined, team = 0, power = 0): ArenaPlayerView {
+  if (!user) return fallbackArenaPlayerView();
   return {
     wallet: user.id,
     displayName: user.displayName,
@@ -124,7 +131,8 @@ export function toArenaPlayerView(user: MockUser, team = 0, power = 0): ArenaPla
   };
 }
 
-export function toArenaPlayerStats(user: MockUser): ArenaPlayerStats {
+export function toArenaPlayerStats(user: MockUser | null | undefined): ArenaPlayerStats {
+  if (!user) return fallbackArenaPlayerStats();
   return {
     elo: String(1000 + user.wins * 12 - user.losses * 4),
     displayName: user.displayName,
@@ -132,6 +140,45 @@ export function toArenaPlayerStats(user: MockUser): ArenaPlayerStats {
     power: String(user.wins * 3),
     isReady: true,
   };
+}
+
+export function fallbackArenaMatchView(matchId: number | string = 0): ArenaMatchView {
+  return {
+    id: String(matchId),
+    players: ["user_0", "user_1"],
+    startTime: "0",
+    endTime: "0",
+    status: 1,
+    winner: 0,
+    prizePool: "20.0",
+    sunPower: "12",
+    moonPower: "9",
+  };
+}
+
+export function fallbackArenaPlayerView(account = "user_0"): ArenaPlayerView {
+  return {
+    wallet: account,
+    displayName: "CrewLead",
+    team: 0,
+    power: "0",
+    isReady: true,
+  };
+}
+
+export function fallbackArenaPlayerStats(): ArenaPlayerStats {
+  return {
+    elo: "1000",
+    displayName: "CrewLead",
+    team: 0,
+    power: "0",
+    isReady: true,
+  };
+}
+
+export function resolveMockMatchView(matches: MockMatch[], matchId: number | string): ArenaMatchView {
+  const match = findMockMatch(matches, matchId);
+  return match ? toArenaMatchView(match) : fallbackArenaMatchView(matchId);
 }
 
 export function mockMatchReceipt(match: MockMatch): MockTxReceipt {

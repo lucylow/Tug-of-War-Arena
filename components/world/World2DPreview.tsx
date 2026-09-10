@@ -15,7 +15,7 @@ export function World2DPreview({ dataset }: Props) {
       <Text style={styles.title}>Projected from 3D spawn</Text>
       <Text style={styles.body}>Same coordinates as the Decentraland parcel — not a separate invented map.</Text>
       <View style={styles.mapWrap}>
-        <WorldMiniMap2D dataset={dataset} />
+        <WorldMiniMap2D dataset={dataset ?? ({ players: [] } as HybridWorldDataset)} />
       </View>
       <Text style={styles.disclaimer}>{DEMO_DISCLAIMER}</Text>
     </View>

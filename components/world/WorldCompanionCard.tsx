@@ -25,8 +25,17 @@ type Props = {
 
 export function WorldCompanionCard({ onOpenWorld, hybrid }: Props) {
   const { projection, dataset, status } = hybrid;
-  const hero = projection.heroRoom;
-  const metrics = projection.metrics;
+  const hero = projection?.heroRoom ?? null;
+  const metrics = projection?.metrics ?? {
+    onlinePlayers: 0,
+    activeRooms: 0,
+    upcomingEvents: 0,
+    matchesToday: 0,
+    socialSignals: 0,
+    communityScore: 0,
+  };
+  const nearbyPlayers = Array.isArray(projection?.nearbyPlayers) ? projection.nearbyPlayers : [];
+  const upcomingEvents = Array.isArray(projection?.upcomingEvents) ? projection.upcomingEvents : [];
 
   const openWorld = async () => {
     try {
@@ -63,17 +72,17 @@ export function WorldCompanionCard({ onOpenWorld, hybrid }: Props) {
 
       <Text style={styles.section}>WORLD PRESENCE</Text>
       <View style={styles.presenceRow}>
-        {projection.nearbyPlayers.slice(0, 6).map((player) => (
+        {nearbyPlayers.slice(0, 6).map((player) => (
           <View key={player.id} style={[styles.avatar, { borderColor: player.team === "sun" ? C.coral : C.cyan }]}>
-            <Text style={styles.avatarText}>{player.displayName.slice(0, 2).toUpperCase()}</Text>
+            <Text style={styles.avatarText}>{(player.displayName || "??").slice(0, 2).toUpperCase()}</Text>
           </View>
         ))}
       </View>
 
       <Text style={styles.section}>UPCOMING 3D EVENTS</Text>
-      {projection.upcomingEvents.slice(0, 3).map((event) => (
+      {upcomingEvents.slice(0, 3).map((event) => (
         <Text key={event.id} style={styles.eventLine}>
-          {event.title}
+          {event.title || "Upcoming event"}
         </Text>
       ))}
 

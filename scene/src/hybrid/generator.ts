@@ -429,6 +429,75 @@ export function calculateMetrics(
   };
 }
 
+function asObject<T extends object>(value: unknown): T | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as T) : null;
+}
+
+function asList<T>(value: unknown): T[] | null {
+  return Array.isArray(value) ? (value.filter(Boolean) as T[]) : null;
+}
+
+function asFinite(value: unknown, fallback = 0): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function asVec3(value: unknown, fallback: Vec3): Vec3 {
+  const record = asObject<Vec3>(value);
+  const x = Number(record?.x);
+  const y = Number(record?.y);
+  const z = Number(record?.z);
+  return {
+    x: Number.isFinite(x) ? x : fallback.x,
+    y: Number.isFinite(y) ? y : fallback.y,
+    z: Number.isFinite(z) ? z : fallback.z,
+  };
+}
+
+function sanitizePlayers(players: WorldPlayerDemo[], fallback: WorldPlayerDemo[]): WorldPlayerDemo[] {
+  const template = fallback[0];
+  if (!template) return players;
+  return players.map((player, index) => ({
+    ...template,
+    ...player,
+    id: typeof player.id === "string" && player.id ? player.id : `player_${index}`,
+    displayName:
+      typeof player.displayName === "string" && player.displayName.trim() ? player.displayName : template.displayName,
+    team: player.team === "moon" ? "moon" : "sun",
+    presence: player.presence === "offline" || player.presence === "away" ? player.presence : "online",
+    spawn: asVec3(player.spawn, template.spawn),
+    zone: player.zone || template.zone,
+    isHighlighted: Boolean(player.isHighlighted),
+    level: asFinite(player.level, template.level),
+    score: asFinite(player.score, template.score),
+    pulls: asFinite(player.pulls, template.pulls),
+    streak: asFinite(player.streak, template.streak),
+    wins: asFinite(player.wins, template.wins),
+    losses: asFinite(player.losses, template.losses),
+    avatarHue: asFinite(player.avatarHue, template.avatarHue),
+  }));
+}
+
+function sanitizeRooms(rooms: WorldRoomDemo[], fallback: WorldRoomDemo[]): WorldRoomDemo[] {
+  const template = fallback[0];
+  if (!template) return rooms;
+  return rooms.map((room, index) => ({
+    ...template,
+    ...room,
+    id: typeof room.id === "string" && room.id ? room.id : `room_${index}`,
+    code: typeof room.code === "string" && room.code ? room.code : template.code,
+    title: typeof room.title === "string" && room.title ? room.title : template.title,
+    phase: room.phase === "countdown" || room.phase === "active" || room.phase === "finished" ? room.phase : "waiting",
+    playerIds: Array.isArray(room.playerIds) ? room.playerIds.filter((id): id is string => typeof id === "string") : [],
+    maxPlayers: Math.max(1, asFinite(room.maxPlayers, template.maxPlayers)),
+    ropePosition: asFinite(room.ropePosition, 0),
+    timeRemaining: asFinite(room.timeRemaining, 0),
+    sunScore: asFinite(room.sunScore, 0),
+    moonScore: asFinite(room.moonScore, 0),
+    featured: Boolean(room.featured),
+  }));
+}
+
 export function createEmptyHybridWorldDataset(): HybridWorldDataset {
   const rooms: WorldRoomDemo[] = [];
   const players: WorldPlayerDemo[] = [];
@@ -449,6 +518,198 @@ export function createEmptyHybridWorldDataset(): HybridWorldDataset {
   };
 }
 
+/** Static seeded plaza used when generation or live data fails. */
+export function createFallbackHybridWorldDataset(): HybridWorldDataset {
+  const players: WorldPlayerDemo[] = [
+    {
+      id: "player_0",
+      displayName: "NovaWisp",
+      team: "sun",
+      presence: "online",
+      level: 12,
+      score: 240,
+      pulls: 48,
+      streak: 3,
+      wins: 9,
+      losses: 4,
+      avatarHue: 0,
+      spawn: { x: 4.6, y: 0.85, z: 16 },
+      zone: "sun-base",
+      isHighlighted: true,
+    },
+    {
+      id: "player_1",
+      displayName: "PixelRally",
+      team: "moon",
+      presence: "online",
+      level: 11,
+      score: 220,
+      pulls: 41,
+      streak: 2,
+      wins: 8,
+      losses: 5,
+      avatarHue: 37,
+      spawn: { x: 27.4, y: 0.85, z: 16 },
+      zone: "moon-base",
+      isHighlighted: true,
+    },
+    {
+      id: "player_2",
+      displayName: "MoonRunner",
+      team: "moon",
+      presence: "away",
+      level: 9,
+      score: 160,
+      pulls: 28,
+      streak: 1,
+      wins: 5,
+      losses: 3,
+      avatarHue: 74,
+      spawn: { x: 18.2, y: 0.85, z: 12.4 },
+      zone: "spectator",
+      isHighlighted: false,
+    },
+  ];
+  const rooms: WorldRoomDemo[] = [
+    {
+      id: "room_friday",
+      code: "731XZ",
+      title: "Friday Night Pull",
+      phase: "active",
+      playerIds: players.map((player) => player.id),
+      maxPlayers: 8,
+      ropePosition: 0.16,
+      timeRemaining: 18,
+      sunScore: 428,
+      moonScore: 381,
+      featured: true,
+    },
+  ];
+  const events: WorldEventDemo[] = [
+    {
+      id: "event_friday",
+      kind: "social",
+      title: "Friendzone Friday",
+      startsInMinutes: 8,
+      participants: 24,
+      rewardLabel: "Daily badge",
+      position: { x: 10.4, y: 0.35, z: 21.6 },
+      featured: true,
+    },
+    {
+      id: "event_cup",
+      kind: "tournament",
+      title: "Sun vs Moon Cup",
+      startsInMinutes: 21,
+      participants: 38,
+      rewardLabel: "Cup flare",
+      position: { x: 21.6, y: 0.35, z: 21.2 },
+      featured: true,
+    },
+  ];
+  const missions: WorldMissionDemo[] = [
+    {
+      id: "mission_pulls",
+      title: "Pull together",
+      description: "Land 20 rope pulls in the featured room.",
+      target: 20,
+      progress: 12,
+      rewardLabel: "Streak badge",
+      complete: false,
+      position: { x: 8.2, y: 0.42, z: 11.4 },
+    },
+  ];
+  const matches: WorldMatchDemo[] = [
+    {
+      id: "match_0",
+      roomId: "room_friday",
+      winner: "sun",
+      sunPulls: 22,
+      moonPulls: 18,
+      durationSeconds: 28,
+      highlight: "Sun Crew held the line",
+      createdAt: 1_725_000_000_000,
+    },
+  ];
+  const socialSignals: WorldSocialSignalDemo[] = [
+    {
+      id: "signal_0",
+      kind: "join",
+      actorId: "player_0",
+      message: "NovaWisp joined the arena",
+      emoji: "👋",
+      createdAt: 1_725_000_000_000,
+    },
+  ];
+  return {
+    protocolVersion: HYBRID_PROTOCOL_VERSION,
+    generatedAt: Date.now(),
+    mode: "demo",
+    origin: { origin: "demo" },
+    players,
+    rooms,
+    events,
+    missions,
+    matches,
+    socialSignals,
+    portals: createPortals(),
+    scoreboard: createScoreboard(rooms, players),
+    metrics: calculateMetrics(players, rooms, events, matches, socialSignals),
+  };
+}
+
+export function normalizeHybridWorldDataset(dataset: HybridWorldDataset | null | undefined): HybridWorldDataset {
+  const fallback = createFallbackHybridWorldDataset();
+  if (!dataset || typeof dataset !== "object") return fallback;
+
+  const players = sanitizePlayers(asList<WorldPlayerDemo>(dataset.players) ?? fallback.players, fallback.players);
+  const rooms = sanitizeRooms(asList<WorldRoomDemo>(dataset.rooms) ?? fallback.rooms, fallback.rooms);
+  const events = asList<WorldEventDemo>(dataset.events) ?? fallback.events;
+  const missions = asList<WorldMissionDemo>(dataset.missions) ?? fallback.missions;
+  const matches = asList<WorldMatchDemo>(dataset.matches) ?? fallback.matches;
+  const socialSignals = asList<WorldSocialSignalDemo>(dataset.socialSignals) ?? fallback.socialSignals;
+  const portals = asList<WorldPortalDemo>(dataset.portals) ?? fallback.portals;
+  const computedScoreboard = createScoreboard(rooms, players);
+  const scoreboardRecord = asObject<WorldScoreboardDemo>(dataset.scoreboard);
+  const metricsRecord = asObject<WorldMetricsDemo>(dataset.metrics);
+
+  return {
+    protocolVersion: HYBRID_PROTOCOL_VERSION,
+    generatedAt: Number.isFinite(Number(dataset.generatedAt)) ? Number(dataset.generatedAt) : Date.now(),
+    mode: dataset.mode === "live" ? "live" : "demo",
+    origin: { origin: "demo" },
+    players,
+    rooms,
+    events,
+    missions,
+    matches,
+    socialSignals,
+    portals,
+    scoreboard: scoreboardRecord
+      ? {
+          ...computedScoreboard,
+          ...scoreboardRecord,
+          roomId: scoreboardRecord.roomId || computedScoreboard.roomId,
+          sunScore: Number.isFinite(Number(scoreboardRecord.sunScore))
+            ? Number(scoreboardRecord.sunScore)
+            : computedScoreboard.sunScore,
+          moonScore: Number.isFinite(Number(scoreboardRecord.moonScore))
+            ? Number(scoreboardRecord.moonScore)
+            : computedScoreboard.moonScore,
+          ropePosition: Number.isFinite(Number(scoreboardRecord.ropePosition))
+            ? Number(scoreboardRecord.ropePosition)
+            : computedScoreboard.ropePosition,
+          leadingTeam: scoreboardRecord.leadingTeam || computedScoreboard.leadingTeam,
+          sunCrewLabel: scoreboardRecord.sunCrewLabel || computedScoreboard.sunCrewLabel,
+          moonCrewLabel: scoreboardRecord.moonCrewLabel || computedScoreboard.moonCrewLabel,
+        }
+      : computedScoreboard,
+    metrics: metricsRecord
+      ? { ...calculateMetrics(players, rooms, events, matches, socialSignals), ...metricsRecord }
+      : calculateMetrics(players, rooms, events, matches, socialSignals),
+  };
+}
+
 export function createHybridWorldDataset(seed = HYBRID_WORLD_SEED): HybridWorldDataset {
   const random = new SeededWorldRandom(Number.isFinite(seed) ? seed : HYBRID_WORLD_SEED);
   const players = createPlayers(random);
@@ -459,7 +720,7 @@ export function createHybridWorldDataset(seed = HYBRID_WORLD_SEED): HybridWorldD
   const socialSignals = createSignals(random, players);
 
   if (players.length === 0 || rooms.length === 0) {
-    throw new Error("Hybrid world generator produced an empty universe.");
+    return createFallbackHybridWorldDataset();
   }
 
   return {
@@ -481,8 +742,8 @@ export function createHybridWorldDataset(seed = HYBRID_WORLD_SEED): HybridWorldD
 
 export function createHybridWorldDatasetSafe(seed = HYBRID_WORLD_SEED): HybridWorldDataset {
   try {
-    return createHybridWorldDataset(seed);
+    return normalizeHybridWorldDataset(createHybridWorldDataset(seed));
   } catch {
-    return createEmptyHybridWorldDataset();
+    return createFallbackHybridWorldDataset();
   }
 }
