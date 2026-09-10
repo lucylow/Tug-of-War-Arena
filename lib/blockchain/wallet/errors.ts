@@ -134,12 +134,12 @@ const COPY: Record<WalletErrorCode, { title: string; message: string; recoverabl
   },
   NO_PROVIDER: {
     title: "Wallet unavailable",
-    message: "Wallet unavailable. Continue in Demo Mode.",
+    message: "Wallet isn’t available in this environment. Continue in demo mode or open the web wallet experience.",
     recoverable: true,
   },
   PROVIDER_UNAVAILABLE: {
     title: "Wallet unavailable",
-    message: "Wallet unavailable. Continue in Demo Mode.",
+    message: "Wallet isn’t available in this environment. Continue in demo mode or open the web wallet experience.",
     recoverable: true,
   },
   WRONG_NETWORK: {
@@ -169,7 +169,7 @@ const COPY: Record<WalletErrorCode, { title: string; message: string; recoverabl
   },
   UNSUPPORTED_RUNTIME: {
     title: "Wallet unavailable",
-    message: "Wallet unavailable on this runtime. Continue in Demo Mode.",
+    message: "Wallet isn’t available in this environment. Continue in demo mode or open the web wallet experience.",
     recoverable: true,
   },
   PROVIDER_ERROR: {

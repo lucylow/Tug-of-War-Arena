@@ -20,6 +20,13 @@ export function createPlayerMarkers(): void {
 
 export function createSocialBoards(): void {
   const dataset = createMockWorldDataset()
+  const online = dataset.players.filter((player) => player.presence === 'online').slice(0, 6)
+  box(undefined, { x: 5.2, y: 1.6, z: 20.8 }, { x: 4.2, y: 2.4, z: 0.28 }, 'sun', { collider: true })
+  worldLabel(['CREW ONLINE', ...online.map((player) => player.displayName), 'DEMO'].join('\n'), Vector3.create(5.2, 3.4, 20.8), 0.7)
+
+  box(undefined, { x: 16, y: 0.16, z: 8.6 }, { x: 5.2, y: 0.18, z: 2.2 }, 'highlight', { collider: true })
+  worldLabel('SOCIAL REACTIONS\nCLICK TO CHEER  DEMO', Vector3.create(16, 1.2, 8.6), 0.8)
+
   box(undefined, { x: 8.4, y: 1.4, z: 27.2 }, { x: 5.6, y: 2.6, z: 0.35 }, 'neutral', { collider: true })
   worldLabel('ROOM BOARD', Vector3.create(8.4, 3.1, 27.2), 1.1)
   dataset.rooms.forEach((room, index) => {

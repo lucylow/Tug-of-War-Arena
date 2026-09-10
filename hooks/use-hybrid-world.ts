@@ -1,6 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
+import { Platform } from "react-native";
 import * as Linking from "expo-linking";
 
+import { toUserMessage } from "@/lib/errors/appError";
 import {
   applyDemoScenario,
   createFallbackHybridWorldDataset,
@@ -20,7 +22,7 @@ function loadDataset(scenario: DemoScenario): { dataset: HybridWorldDataset; err
   } catch (error) {
     return {
       dataset: applyDemoScenario(createFallbackHybridWorldDataset(), scenario),
-      error: error instanceof Error ? error.message : "Demo universe failed to generate",
+      error: toUserMessage(error) || "Demo universe failed to generate",
     };
   }
 }
@@ -55,13 +57,18 @@ export function useHybridWorld(initialScenario: DemoScenario = "active-match") {
       }
       const supported = await Linking.canOpenURL(url);
       if (!supported) throw new Error("World URL unavailable");
-      await Linking.openURL(url);
-      setStatus("Opened 3D World");
+      if (Platform.OS === "web" && typeof window !== "undefined" && typeof window.open === "function") {
+        const popup = window.open(url, "_blank", "noopener,noreferrer");
+        if (!popup) await Linking.openURL(url);
+      } else {
+        await Linking.openURL(url);
+      }
+      setStatus("Opened 3D World in Explorer. Companion preview stays here.");
       setError(null);
       return true;
     } catch (caught) {
       setStatus("World link unavailable — 2D companion still works offline");
-      setError(caught instanceof Error ? caught.message : "World link unavailable");
+      setError(toUserMessage(caught) || "World link unavailable");
       return false;
     }
   }, []);

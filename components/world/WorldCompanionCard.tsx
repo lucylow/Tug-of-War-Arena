@@ -45,7 +45,7 @@ export function WorldCompanionCard({ onOpenWorld, hybrid }: Props) {
       }
       await hybrid.openWorld();
     } catch {
-      // The companion stays usable if the 3D world link cannot open.
+      // hybrid.openWorld records a user-facing error; the 2D companion stays usable.
     }
   };
 
@@ -129,9 +129,15 @@ export function WorldCompanionCard({ onOpenWorld, hybrid }: Props) {
           <Text style={styles.actionText}>REFRESH DEMO</Text>
         </Pressable>
       </View>
-      <Text accessibilityLiveRegion="polite" style={styles.status}>
-        {status}
-      </Text>
+      {hybrid.error ? (
+        <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>
+          {hybrid.error} The 2D companion stays available.
+        </Text>
+      ) : (
+        <Text accessibilityLiveRegion="polite" style={styles.status}>
+          {status}
+        </Text>
+      )}
     </View>
   );
 }
@@ -214,5 +220,6 @@ const styles = StyleSheet.create({
   actionText: { color: C.mint, fontSize: 11, fontWeight: "900", letterSpacing: 0.5 },
   actionPrimaryText: { color: C.ink, fontSize: 11, fontWeight: "900", letterSpacing: 0.5 },
   status: { color: C.gold, fontSize: 11, fontWeight: "800", marginTop: 10 },
+  error: { color: C.gold, fontSize: 12, lineHeight: 16, marginTop: 10, fontWeight: "800" },
   pressed: { opacity: 0.75 },
 });

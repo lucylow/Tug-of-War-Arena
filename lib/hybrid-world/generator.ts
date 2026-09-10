@@ -763,7 +763,10 @@ export function createHybridWorldDataset(seed = HYBRID_WORLD_SEED): HybridWorldD
 export function createHybridWorldDatasetSafe(seed = HYBRID_WORLD_SEED): HybridWorldDataset {
   try {
     return normalizeHybridWorldDataset(createHybridWorldDataset(seed));
-  } catch {
+  } catch (error) {
+    if (typeof console !== "undefined") {
+      console.warn("[hybrid-world] falling back to seeded mock universe", error instanceof Error ? error.message : "unknown");
+    }
     return createFallbackHybridWorldDataset();
   }
 }

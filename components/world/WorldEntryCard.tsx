@@ -57,6 +57,11 @@ export function WorldEntryCard({ onEnterWorld, onViewMap, hybrid }: Props) {
           <Text style={styles.buttonText}>VIEW ON MAP</Text>
         </Pressable>
       </View>
+      {world.error ? (
+        <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>
+          {world.error} The 2D companion stays available.
+        </Text>
+      ) : null}
       <Text style={styles.note}>World preview available. Open in a supported Decentraland Explorer environment.</Text>
     </View>
   );
@@ -87,6 +92,7 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: C.mint },
   buttonText: { color: C.mint, fontSize: 11, fontWeight: "900" },
   primaryText: { color: C.ink, fontSize: 11, fontWeight: "900" },
+  error: { color: C.gold, fontSize: 12, lineHeight: 16, marginTop: 10, fontWeight: "800" },
   note: { color: C.fog, fontSize: 11, lineHeight: 15, marginTop: 10, fontWeight: "600" },
   pressed: { opacity: 0.75 },
 });

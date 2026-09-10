@@ -7,6 +7,11 @@ export function startPerformanceSystem(onTick: () => void): void {
     elapsed += dt * 1000
     if (elapsed < TARGET_UPDATE_MS) return
     elapsed = 0
-    onTick()
+    try {
+      onTick()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown'
+      console.error(`[world] performance tick failed: ${message}`)
+    }
   })
 }

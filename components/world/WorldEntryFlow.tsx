@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
-import { FRIENDZONE_WORLD_IDENTITY } from "@/shared/worldIdentity";
-import { WORLD_COPY, MOBILE_COPY } from "@/shared/copy";
-import { roomFixture } from "@/shared/fixtures/roomFixture";
-import { missionFixture } from "@/shared/fixtures/missionFixture";
+import { toUserMessage } from "@/lib/errors/appError";
 import { onPrimaryPress, onSecondaryPress } from "@/lib/world/touchFeedback";
+import { WORLD_COPY } from "@/shared/copy";
+import { missionFixture } from "@/shared/fixtures/missionFixture";
+import { roomFixture } from "@/shared/fixtures/roomFixture";
+import { FRIENDZONE_WORLD_IDENTITY } from "@/shared/worldIdentity";
 
 export type WorldEntryState =
   | "WORLD DISCOVERY"
@@ -30,22 +32,29 @@ export function WorldEntryFlow({
   onRetry,
   onContinueMobile,
 }: Props) {
+  const [localError, setLocalError] = useState<string | null>(null);
   const mission = missionFixture[0];
-  const blocked = state === "ERROR" || state === "EXTERNAL APP REQUIRED";
+  const resolvedState: WorldEntryState = localError ? "ERROR" : state;
+  const blocked = resolvedState === "ERROR" || resolvedState === "EXTERNAL APP REQUIRED";
 
   return (
     <View accessibilityLabel="Friendzone World entry" style={styles.card}>
       <Text style={styles.kicker}>{FRIENDZONE_WORLD_IDENTITY.worldTitle}</Text>
       <Text style={styles.title}>{WORLD_COPY.friendzoneWorld}</Text>
       <Text style={styles.subtitle}>{WORLD_COPY.socialArena}</Text>
-      <Text style={styles.meta}>Players: {onlinePlayers} online</Text>
+      <Text style={styles.meta}>Players: {onlinePlayers} demo players online</Text>
       <Text style={styles.meta}>Room: {roomFixture.featured.title}</Text>
       <Text style={styles.meta}>
         Mission: {mission?.progress}/{mission?.target}
       </Text>
       <Text accessibilityLiveRegion="polite" style={styles.state}>
-        {state}
+        {resolvedState}
       </Text>
+      {localError ? (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {localError} The mobile companion stays available.
+        </Text>
+      ) : null}
       {!blocked ? (
         <Pressable
           accessibilityRole="button"
@@ -53,7 +62,9 @@ export function WorldEntryFlow({
           hitSlop={12}
           onPress={() => {
             onPrimaryPress();
-            void onEnter?.();
+            void Promise.resolve(onEnter?.()).catch((error) => {
+              setLocalError(toUserMessage(error));
+            });
           }}
           style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
         >
@@ -67,6 +78,7 @@ export function WorldEntryFlow({
             hitSlop={12}
             onPress={() => {
               onPrimaryPress();
+              setLocalError(null);
               onRetry?.();
             }}
             style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
@@ -105,6 +117,7 @@ const styles = StyleSheet.create({
   subtitle: { color: C.fog, fontSize: 13, fontWeight: "800", marginTop: 4 },
   meta: { color: C.cloud, fontSize: 14, fontWeight: "700", marginTop: 6 },
   state: { color: C.mint, fontSize: 11, fontWeight: "800", marginTop: 10 },
+  error: { color: C.gold, fontSize: 12, lineHeight: 16, marginTop: 8, fontWeight: "800" },
   primary: {
     minHeight: 44,
     borderRadius: 14,
@@ -128,3 +141,4 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 8, marginTop: 12 },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
 });
+

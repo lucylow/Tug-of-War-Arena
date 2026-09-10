@@ -33,10 +33,10 @@ export function MobileTutorial({ visible, onSkip, onComplete }: Props) {
 const styles = StyleSheet.create({
   card: { backgroundColor: C.panel, borderRadius: 22, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: C.border },
   line: { color: C.cloud, fontSize: 16, fontWeight: "900", marginTop: 8 },
-  row: { flexDirection: "row", gap: 8, marginTop: 14 },
-  primary: { minHeight: 44, flex: 1, borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "column", gap: 8, marginTop: 14 },
+  primary: { minHeight: 44, width: "100%", borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" },
   primaryText: { color: C.ink, fontWeight: "900" },
-  secondary: { minHeight: 44, flex: 1, borderRadius: 14, borderWidth: 1, borderColor: C.mint, alignItems: "center", justifyContent: "center" },
+  secondary: { minHeight: 44, width: "100%", borderRadius: 14, borderWidth: 1, borderColor: C.mint, alignItems: "center", justifyContent: "center" },
   secondaryText: { color: C.mint, fontWeight: "900" },
   pressed: { opacity: 0.8 },
 });

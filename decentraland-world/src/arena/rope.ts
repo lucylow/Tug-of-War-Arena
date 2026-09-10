@@ -18,7 +18,7 @@ export function createRope(): RopeHandle {
   Transform.create(root, { position: Vector3.create(ARENA_CENTER.x, 0, ARENA_CENTER.z) })
   const segments = []
   for (let i = 0; i < ROPE_SEGMENTS; i += 1) {
-    const t = i / (ROPE_SEGMENTS - 1)
+    const t = i / Math.max(1, ROPE_SEGMENTS - 1)
     const x = 6 + t * 20
     segments.push(cylinder(undefined, { x, y: 1.45, z: ARENA_CENTER.z }, { x: 0.18, y: 0.18, z: 0.18 }, 'rope'))
   }
@@ -30,13 +30,23 @@ export function createRope(): RopeHandle {
 
 export function updateRope(pull = 0): void {
   if (!rope) return
-  const offset = Math.max(-4, Math.min(4, pull * 0.08))
-  for (let i = 0; i < rope.segments.length; i += 1) {
-    const transform = Transform.getMutable(rope.segments[i])
-    const t = i / Math.max(1, rope.segments.length - 1)
-    transform.position = Vector3.create(6 + t * 20 + offset * (t - 0.5), 1.45, ARENA_CENTER.z)
+  try {
+    const offset = Math.max(-4, Math.min(4, pull * 0.08))
+    const count = Math.max(1, rope.segments.length - 1)
+    for (let i = 0; i < rope.segments.length; i += 1) {
+      const segment = rope.segments[i]
+      if (!segment) continue
+      const transform = Transform.getMutableOrNull(segment)
+      if (!transform) continue
+      const t = i / count
+      transform.position = Vector3.create(6 + t * 20 + offset * (t - 0.5), 1.45, ARENA_CENTER.z)
+    }
+    const knot = Transform.getMutableOrNull(rope.knot)
+    if (knot) knot.position = Vector3.create(ARENA_CENTER.x + offset, 1.55, ARENA_CENTER.z)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown'
+    console.error(`[world] updateRope failed: ${message}`)
   }
-  Transform.getMutable(rope.knot).position = Vector3.create(ARENA_CENTER.x + offset, 1.55, ARENA_CENTER.z)
 }
 
 export function resetRope(): void {
@@ -48,6 +58,4 @@ export function createArenaStage(): void {
   box(undefined, { x: 7, y: 0.6, z: ARENA_CENTER.z }, { x: 0.35, y: 1.2, z: 8 }, 'sun', { collider: true })
   box(undefined, { x: 25, y: 0.6, z: ARENA_CENTER.z }, { x: 0.35, y: 1.2, z: 8 }, 'moon', { collider: true })
   worldLabel('CENTRAL ARENA', Vector3.create(ARENA_CENTER.x, 3.2, ARENA_CENTER.z + 4.4), 1.4)
-  worldLabel('SCORE WALL  SUN 428   MOON 381', Vector3.create(ARENA_CENTER.x, 2.6, ARENA_CENTER.z + 5.6), 1.05)
-  worldLabel('MATCH TIMER  00:42', Vector3.create(ARENA_CENTER.x, 2.15, ARENA_CENTER.z + 5.6), 0.95)
 }

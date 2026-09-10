@@ -32,6 +32,6 @@
   "requiredPermissions": [],
   "featureToggles": {},
   "worldConfiguration": {
-    "name": "YOUR-NAME.dcl.eth"
+    "name": "YOUR_WORLD_NAME.dcl.eth"
   }
 }

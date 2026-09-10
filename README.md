@@ -1844,7 +1844,7 @@ That is a much stronger product story than a standalone mini-game.
 
 The public repository is positioned as:
 
-> **A mobile-first social tug-of-war experience with a modular Friendzone companion architecture.**
+> **A hybrid Friendzone experience: React Native companion + Decentraland SDK7 3D World. Web3 is optional.**
 
 The repository should clearly distinguish between:
 

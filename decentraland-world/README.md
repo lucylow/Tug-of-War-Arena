@@ -5,7 +5,7 @@ This directory is the **actual Decentraland World**. The Expo app in the reposit
 - SDK: `@dcl/sdk` (SDK7). Do not mix `decentraland-ecs`.
 - Entry: `src/index.ts`
 - Config: `scene.json` (`runtimeVersion: 7`)
-- World name: placeholder `YOUR-NAME.dcl.eth` — replace before publish.
+- World name: placeholder `YOUR_WORLD_NAME.dcl.eth` — replace before publish.
 
 ```bash
 npm install

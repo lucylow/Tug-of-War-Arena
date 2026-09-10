@@ -1,4 +1,5 @@
 import { FEATURES } from "@/lib/config/features";
+import { toUserMessage } from "@/lib/errors/appError";
 import { logger } from "@/lib/logging/logger";
 
 export const WALLET_CONNECT_TIMEOUT_MS = 20_000;
@@ -26,11 +27,11 @@ export async function withTimeout<T>(
 export function safeAsync<T>(work: () => Promise<T>, fallback: T, context: string): Promise<T> {
   try {
     return Promise.resolve(work()).catch((error) => {
-      logger.warn(context, { error: error instanceof Error ? error.message : "unknown" });
+      logger.warn(context, { error: toUserMessage(error) });
       return fallback;
     });
   } catch (error) {
-    logger.warn(context, { error: error instanceof Error ? error.message : "unknown" });
+    logger.warn(context, { error: toUserMessage(error) });
     return Promise.resolve(fallback);
   }
 }

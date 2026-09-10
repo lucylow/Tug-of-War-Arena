@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
 import { useBlockchain } from "@/hooks/use-blockchain";
@@ -61,7 +61,9 @@ export function WalletStatusCard() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Learn more about optional wallets"
-          onPress={() => undefined}
+          onPress={() => {
+            Alert.alert("Web3 is optional", LEARN_MORE_COPY);
+          }}
           style={({ pressed }) => [styles.button, pressed && styles.pressed]}
         >
           <Text style={styles.buttonText}>LEARN MORE</Text>

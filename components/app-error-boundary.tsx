@@ -6,6 +6,7 @@ import {
   initialErrorRecoveryState,
   reduceErrorRecovery,
 } from "@/lib/error-recovery";
+import { ErrorReporter } from "@/lib/world/errorReporter";
 
 interface Props {
   children: ReactNode;
@@ -23,6 +24,7 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
+    ErrorReporter.capture(error, { domain: "app-boundary", stack: info.componentStack });
     if (__DEV__) {
       console.error("Tug of War Arena render error", error, info.componentStack);
     }

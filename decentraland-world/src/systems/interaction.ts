@@ -8,7 +8,14 @@ export function setupInteraction(entity: Entity, onClick: () => void, hoverText:
   try {
     pointerEventsSystem.onPointerDown(
       { entity, opts: { button: InputAction.IA_POINTER, hoverText, maxDistance } },
-      onClick,
+      () => {
+        try {
+          onClick()
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'unknown'
+          console.error(`[world] interaction failed: ${message}`)
+        }
+      },
     )
   } catch {
     // Pointer APIs can be unavailable in some preview hosts.

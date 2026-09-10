@@ -3,5 +3,10 @@
 import { assembleWorld } from './world'
 
 export function main() {
-  assembleWorld()
+  try {
+    assembleWorld()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown'
+    console.error(`[world] assembleWorld failed: ${message}`)
+  }
 }

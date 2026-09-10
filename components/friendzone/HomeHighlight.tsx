@@ -39,9 +39,9 @@ export function HomeHighlight({ onPlay, onEnterWorld }: Props) {
       <MobileTutorial visible={welcome} onSkip={dismissWelcome} onComplete={dismissWelcome} />
       <View style={styles.card}>
         <Text style={styles.kicker}>FRIENDZONE</Text>
-        <Text style={styles.meta}>Crew: 7 online</Text>
+        <Text style={styles.meta}>Crew: 7 online · DEMO</Text>
         <Text style={styles.meta}>Arena: Active · {roomFixture.featured.title}</Text>
-        <Text style={styles.meta}>3D World: Ready</Text>
+        <Text style={styles.meta}>3D World: Ready · companion preview</Text>
         <Text style={styles.meta}>
           Mission: {mission?.progress}/{mission?.target}
         </Text>
@@ -67,10 +67,10 @@ const styles = StyleSheet.create({
   kicker: { color: C.gold, fontSize: 12, fontWeight: "900", letterSpacing: 1.4 },
   meta: { color: C.cloud, fontSize: 14, fontWeight: "700", marginTop: 6 },
   score: { color: C.mint, fontSize: 20, fontWeight: "900", marginTop: 10 },
-  row: { flexDirection: "row", gap: 8, marginTop: 14 },
-  primary: { minHeight: 44, flex: 1, borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" },
+  row: { flexDirection: "column", gap: 8, marginTop: 14 },
+  primary: { minHeight: 44, width: "100%", borderRadius: 14, backgroundColor: C.mint, alignItems: "center", justifyContent: "center" },
   primaryText: { color: C.ink, fontWeight: "900" },
-  secondary: { minHeight: 44, flex: 1, borderRadius: 14, borderWidth: 1, borderColor: C.mint, alignItems: "center", justifyContent: "center" },
+  secondary: { minHeight: 44, width: "100%", borderRadius: 14, borderWidth: 1, borderColor: C.mint, alignItems: "center", justifyContent: "center" },
   secondaryText: { color: C.mint, fontWeight: "900" },
   pressed: { opacity: 0.8 },
 });
