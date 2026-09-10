@@ -1,6 +1,7 @@
 import { MockEventEmitter } from "@/lib/mock/emitter";
 import {
   generateAchievements,
+  generateActivity,
   generateFactions,
   generateFriendships,
   generateGuilds,
@@ -12,17 +13,22 @@ import {
   generateReferrals,
   generateRentals,
   generateRewardPools,
+  generateRooms,
   generateStakePositions,
   generateUsers,
+  generateWorldEvents,
   type Achievement,
   type Faction,
   type Friend,
   type Guild,
   type LeaderboardEntry,
+  type MockActivity,
   type MockMatch,
   type MockNFT,
   type MockRental,
+  type MockRoom,
   type MockUser,
+  type MockWorldEvent,
   type PredictionMarket,
   type Quest,
   type Referral,
@@ -32,6 +38,7 @@ import {
 import {
   DEFAULT_MOCK_SEED,
   MOCK_ACHIEVEMENT_COUNT,
+  MOCK_ACTIVITY_COUNT,
   MOCK_MATCH_COUNT,
   MOCK_NFT_COUNT,
   MOCK_PREDICTION_COUNT,
@@ -40,7 +47,9 @@ import {
   MOCK_USER_COUNT,
   SeededRandom,
 } from "@/lib/mock/seed";
-import { DEMO_ACCOUNT } from "@/lib/web3/session";
+import { DEMO_ACCOUNT_ALIASES } from "@/lib/web3/session";
+
+const DEMO_ALIAS_SET = new Set(DEMO_ACCOUNT_ALIASES.map((alias) => alias.toLowerCase()));
 
 export type MockWorldOptions = {
   userCount?: number;
@@ -50,6 +59,7 @@ export type MockWorldOptions = {
   predictionCount?: number;
   achievementCount?: number;
   rentalCount?: number;
+  activityCount?: number;
 };
 
 export class MockWorld {
@@ -67,6 +77,9 @@ export class MockWorld {
   rentals: MockRental[];
   achievements: Achievement[];
   referrals: Referral[];
+  rooms: MockRoom[];
+  worldEvents: MockWorldEvent[];
+  activity: MockActivity[];
   balances = new Map<string, number>();
   allowances = new Map<string, Map<string, number>>();
   events = new MockEventEmitter();
@@ -102,17 +115,72 @@ export class MockWorld {
       random,
     );
     this.referrals = generateReferrals(this.users, random);
+    this.rooms = generateRooms(this.users, random);
+    this.worldEvents = generateWorldEvents(random);
+    this.activity = generateActivity(this.users, random, options.activityCount ?? MOCK_ACTIVITY_COUNT);
 
     for (const user of this.users) {
       this.balances.set(user.id, random.nextInt(100, 1000));
     }
     this.currentUserId = this.users[0]?.id ?? "user_0";
-    const captainBalance = this.balances.get(this.currentUserId) ?? 500;
-    this.balances.set(DEMO_ACCOUNT.toLowerCase(), captainBalance);
+    this.seedCaptainShowcase();
+  }
+
+  private seedCaptainShowcase(): void {
+    const captainId = this.currentUserId;
+    this.balances.set(captainId, 2500);
+    this.syncDemoBalances(2500);
+
+    const needed = 8;
+    for (let index = 0; index < needed && index < this.nfts.length; index += 1) {
+      this.nfts[index]!.ownerId = captainId;
+    }
+    const showcase = this.nfts.slice(0, needed);
+    if (showcase[0]) {
+      showcase[0].rarity = "Legendary";
+      showcase[0].name = "Captain Sash";
+      showcase[0].powerBonus = 50;
+      showcase[0].speedBonus = 25;
+      showcase[0].staked = false;
+    }
+    if (showcase[1]) {
+      showcase[1].rarity = "Epic";
+      showcase[1].name = "Sun Rope";
+      showcase[1].staked = true;
+    }
+    if (showcase[2]) {
+      showcase[2].rarity = "Rare";
+      showcase[2].name = "Moon Gauntlet";
+    }
+
+    if (this.guilds[0] && !this.guilds[0].members.includes(captainId)) {
+      this.guilds[0].members = [captainId, ...this.guilds[0].members.filter((id) => id !== captainId)];
+      this.guilds[0].leaderId = captainId;
+      this.guilds[0].name = "Crimson Dawn";
+    }
+
+    const live = this.matches.find((match) => match.winnerTeam === null);
+    if (live && !live.participants.includes(captainId)) {
+      live.participants = [captainId, ...live.participants.slice(0, 3)];
+    } else if (this.matches[0] && !this.matches[0].participants.includes(captainId)) {
+      this.matches[0].participants = [captainId, ...this.matches[0].participants.slice(0, 3)];
+    }
+
+    for (const achievement of this.achievements.slice(0, 5)) {
+      if (!achievement.unlockedBy.includes(captainId)) {
+        achievement.unlockedBy = [captainId, ...achievement.unlockedBy];
+      }
+    }
+
+    if (this.rooms[0] && !this.rooms[0].memberIds.includes(captainId)) {
+      this.rooms[0].captainId = captainId;
+      this.rooms[0].memberIds = [captainId, ...this.rooms[0].memberIds.filter((id) => id !== captainId)].slice(0, this.rooms[0].maxPlayers);
+      this.rooms[0].players = this.rooms[0].memberIds.length;
+    }
   }
 
   resolveUserId(id: string): string {
-    if (id.toLowerCase() === DEMO_ACCOUNT.toLowerCase()) return this.currentUserId;
+    if (DEMO_ALIAS_SET.has(id.toLowerCase())) return this.currentUserId;
     return id;
   }
 
@@ -138,11 +206,17 @@ export class MockWorld {
     const resolved = this.resolveUserId(userId);
     this.balances.set(resolved, amount);
     if (resolved === this.currentUserId) {
-      this.balances.set(DEMO_ACCOUNT.toLowerCase(), amount);
+      this.syncDemoBalances(amount);
     }
   }
 
   rebuildLeaderboard(): void {
     this.leaderboard = generateLeaderboard(this.users);
+  }
+
+  private syncDemoBalances(amount: number): void {
+    for (const alias of DEMO_ALIAS_SET) {
+      this.balances.set(alias, amount);
+    }
   }
 }

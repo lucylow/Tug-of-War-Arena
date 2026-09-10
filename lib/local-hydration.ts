@@ -9,7 +9,7 @@ export type HydrationResult<T> =
   | { status: "unavailable" };
 
 export function parseHydratedValue<T>(raw: string | null, parser: (value: string) => T | null | undefined): HydrationResult<T> {
-  if (raw === null) return { status: "missing" };
+  if (raw === null || raw.trim() === "") return { status: "missing" };
   try {
     const value = parser(raw);
     return value == null ? { status: "malformed" } : { status: "valid", value };

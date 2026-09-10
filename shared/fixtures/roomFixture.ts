@@ -23,4 +23,28 @@ export const roomFixture = {
     maxPlayers: 8,
     origin: "demo" as const,
   },
+  plaza: {
+    id: "room_plaza",
+    title: "Plaza Sprint",
+    code: "PLZ8K",
+    players: 4,
+    maxPlayers: 6,
+    origin: "demo" as const,
+  },
+  moonlight: {
+    id: "room_moonlight",
+    title: "Moonlight Duel",
+    code: "MOON3",
+    players: 2,
+    maxPlayers: 4,
+    origin: "demo" as const,
+  },
+  open: {
+    id: "room_open",
+    title: "Friendzone Open",
+    code: "OPEN7",
+    players: 9,
+    maxPlayers: 12,
+    origin: "demo" as const,
+  },
 };

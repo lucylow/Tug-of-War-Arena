@@ -1,3 +1,4 @@
+import { FEATURED_DEMO_CAST } from "@/lib/mock/generators/cast";
 import { SeededRandom } from "@/lib/mock/seed";
 
 export interface MockUser {
@@ -66,17 +67,18 @@ const LAST_NAMES = [
 export function generateUsers(count: number, random: SeededRandom): MockUser[] {
   const users: MockUser[] = [];
   for (let i = 0; i < count; i += 1) {
+    const featured = FEATURED_DEMO_CAST[i];
     const firstName = random.pick(FIRST_NAMES);
     const lastName = random.pick(LAST_NAMES);
     const isCaptain = i === 0;
-    const wins = isCaptain ? 18 : random.nextInt(0, 50);
-    const losses = isCaptain ? 4 : random.nextInt(0, 30);
-    const matchesPlayed = wins + losses + (isCaptain ? 2 : random.nextInt(0, 10));
-    const unaffiliated = isCaptain ? false : random.nextInt(0, 2) === 0;
+    const wins = featured?.wins ?? (isCaptain ? 18 : random.nextInt(0, 8));
+    const losses = featured?.losses ?? (isCaptain ? 4 : random.nextInt(0, 12));
+    const matchesPlayed = wins + losses + (featured?.extraMatches ?? (isCaptain ? 2 : random.nextInt(0, 10)));
+    const unaffiliated = featured ? false : isCaptain ? false : random.nextInt(0, 2) === 0;
     users.push({
       id: `user_${i}`,
-      displayName: isCaptain ? "Arena Captain" : `${firstName} ${lastName}`,
-      email: isCaptain ? "captain@friendzone.local" : `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+      displayName: featured?.displayName ?? (isCaptain ? "Arena Captain" : `${firstName} ${lastName}`),
+      email: featured?.email ?? (isCaptain ? "captain@friendzone.local" : `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`),
       avatarUrl: `https://i.pravatar.cc/150?img=${i % 70}`,
       wins,
       losses,
@@ -84,10 +86,10 @@ export function generateUsers(count: number, random: SeededRandom): MockUser[] {
       level: Math.floor(matchesPlayed / 5) + 1,
       xp: matchesPlayed * 10 + (isCaptain ? 40 : random.nextInt(0, 50)),
       reputation: wins * 5 + (isCaptain ? 20 : random.nextInt(0, 20)),
-      isVerified: isCaptain || wins > 20 || random.nextInt(0, 100) > 80,
+      isVerified: featured?.verified ?? (isCaptain || wins > 20 || random.nextInt(0, 100) > 80),
       joinedAt: new Date(Date.now() - (isCaptain ? 120 : random.nextInt(0, 365)) * 24 * 60 * 60 * 1000),
       lastActive: new Date(Date.now() - (isCaptain ? 0 : random.nextInt(0, 7)) * 24 * 60 * 60 * 1000),
-      faction: unaffiliated ? null : isCaptain ? "red" : random.nextInt(0, 1) === 0 ? "red" : "blue",
+      faction: featured?.faction ?? (unaffiliated ? null : isCaptain ? "red" : random.nextInt(0, 1) === 0 ? "red" : "blue"),
     });
   }
   return users;

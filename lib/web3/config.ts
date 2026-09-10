@@ -7,6 +7,22 @@ export const DAPP_METADATA = {
   iconUrl: "https://tugofwar.example.com/icon.png",
 } as const;
 
+/** MetaMask Connect and injected dapps must advertise the page origin on localhost. */
+export function getDappMetadata(): { name: string; url: string; description: string; iconUrl: string } {
+  let url: string = DAPP_METADATA.url;
+  try {
+    const origin = typeof window !== "undefined" ? window.location?.origin : "";
+    if (origin && /^(https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/i.test(origin)) {
+      url = origin;
+    } else if (origin && /^https?:\/\//i.test(origin)) {
+      url = origin;
+    }
+  } catch {
+    // Native / Node keep the packaged metadata URL.
+  }
+  return { ...DAPP_METADATA, url };
+}
+
 export type NetworkDefinition = {
   chainId: number;
   hexChainId: `0x${string}`;

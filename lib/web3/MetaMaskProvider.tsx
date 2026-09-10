@@ -12,7 +12,7 @@ import { connectLiveSession, disconnectLiveSession } from "@/lib/web3/client";
 import { getInjectedProvider } from "@/lib/web3/detect";
 import { formatWalletError, shouldFallbackToDemo, toUserFacingError, toWalletError } from "@/lib/web3/errors";
 import { parseChainId } from "@/lib/web3/format";
-import { DEMO_IDENTITY_ADDRESS } from "@/lib/web3/session";
+import { DEMO_ACCOUNT } from "@/lib/web3/session";
 import { switchEthereumChain } from "@/lib/web3/switch-chain";
 import type { ConnectionMode, ConnectModeRequest, Eip1193Like } from "@/lib/web3/types";
 import { WalletService } from "@/lib/web3/WalletService";
@@ -100,10 +100,10 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
       setAccount(demo.address);
       setChainId(demo.chainId ?? DEFAULT_CHAIN_ID);
     }).catch(() => {
-      setAccount(DEMO_IDENTITY_ADDRESS);
+      setAccount(DEMO_ACCOUNT);
       setChainId(DEFAULT_CHAIN_ID);
     });
-    setAccount(DEMO_IDENTITY_ADDRESS);
+    setAccount(DEMO_ACCOUNT);
     setChainId(DEFAULT_CHAIN_ID);
     setBalance(null);
     setIsConnected(true);
@@ -113,7 +113,7 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     void WalletService.getInstance().connectDemo(DEFAULT_CHAIN_ID);
     void manager
       .getOrCreateService()
-      .getBalance(DEMO_IDENTITY_ADDRESS)
+      .getBalance(DEMO_ACCOUNT)
       .then((value) => setBalance(String(value)))
       .catch(() => setBalance("0"));
   }, [detachProviderListeners]);
@@ -326,22 +326,28 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (!canAccessBrowserEthereum()) return;
-      const injected = getInjectedProvider();
-      if (!injected) return;
-      try {
-        const accounts = (await injected.request({ method: "eth_accounts" })) as string[];
-        if (cancelled || !accounts?.[0]) return;
-        const rawChainId = (await injected.request({ method: "eth_chainId" })) as string;
-        await applyLiveSession(injected, accounts[0], parseChainId(rawChainId) ?? DEFAULT_CHAIN_ID);
-      } catch (error) {
-        if (__DEV__) console.warn("MetaMask session restore skipped:", safeWalletDiagnostic(error), formatWalletError(error));
+      if (canAccessBrowserEthereum()) {
+        const injected = getInjectedProvider();
+        if (injected) {
+          try {
+            const accounts = (await injected.request({ method: "eth_accounts" })) as string[];
+            if (cancelled) return;
+            if (accounts?.[0]) {
+              const rawChainId = (await injected.request({ method: "eth_chainId" })) as string;
+              await applyLiveSession(injected, accounts[0], parseChainId(rawChainId) ?? DEFAULT_CHAIN_ID);
+              return;
+            }
+          } catch (error) {
+            if (__DEV__) console.warn("MetaMask session restore skipped:", safeWalletDiagnostic(error), formatWalletError(error));
+          }
+        }
       }
+      if (!cancelled) applyDemoSession();
     })();
     return () => {
       cancelled = true;
     };
-  }, [applyLiveSession]);
+  }, [applyDemoSession, applyLiveSession]);
 
   const value = useMemo<WalletContextValue>(() => ({
     provider,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { getDappMetadata } from "../lib/web3/config";
 import { formatAddress, formatBalance, formatWalletModeBadge, getNativeSymbol, getNetworkName, parseChainId, toHexChainId } from "../lib/web3/format";
 import { formatWalletError, shouldFallbackToDemo } from "../lib/web3/errors";
 import { DEMO_ACCOUNT, resolveConnectStrategy } from "../lib/web3/session";
@@ -22,6 +23,22 @@ describe("wallet presentation helpers", () => {
     expect(shouldFallbackToDemo({ code: 4001 })).toBe(false);
     expect(shouldFallbackToDemo(new Error("unavailable"))).toBe(true);
     expect(formatWalletError({ code: 4001 })).toBe("Wallet connection canceled.");
+  });
+
+  it("advertises the localhost origin to MetaMask when running in Chrome", () => {
+    const previous = (globalThis as { window?: unknown }).window;
+    (globalThis as { window?: { location: { origin: string } } }).window = {
+      location: { origin: "http://localhost:8081" },
+    };
+    try {
+      expect(getDappMetadata().url).toBe("http://localhost:8081");
+    } finally {
+      if (previous === undefined) {
+        delete (globalThis as { window?: unknown }).window;
+      } else {
+        (globalThis as { window?: unknown }).window = previous;
+      }
+    }
   });
 
   it("maps Friendzone chain ids to arcade network names", () => {

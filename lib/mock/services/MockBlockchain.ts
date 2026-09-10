@@ -5,10 +5,13 @@ import type {
   Faction,
   Guild,
   LeaderboardEntry,
+  MockActivity,
   MockMatch,
   MockNFT,
   MockRental,
+  MockRoom,
   MockUser,
+  MockWorldEvent,
   PredictionMarket,
   Quest,
   Referral,
@@ -287,6 +290,21 @@ export class MockBlockchain implements IMockBlockchain {
   async getRentals(): Promise<MockRental[]> {
     await this.delay();
     return this.world.rentals;
+  }
+
+  async getRooms(): Promise<MockRoom[]> {
+    await this.delay();
+    return this.world.rooms;
+  }
+
+  async getWorldEvents(): Promise<MockWorldEvent[]> {
+    await this.delay();
+    return this.world.worldEvents;
+  }
+
+  async getActivity(): Promise<MockActivity[]> {
+    await this.delay();
+    return this.world.activity;
   }
 
   async listRental(tokenId: number, ownerId: string, fee: number, durationHours: number): Promise<void> {

@@ -19,6 +19,13 @@ const PREDICTION_TITLES = [
   "Will a new NFT collection be released?",
   "Will the next update add a new game mode?",
   "Will the tournament champion be from the Blue Faction?",
+  "Will Friday Night Pull fill before 8pm?",
+  "Will Arena Captain keep a 3-win streak?",
+  "Will Moon Crew take Plaza Sprint?",
+  "Will a Legendary wearable mint this week?",
+  "Will Friendzone Rally break 40 RSVPs?",
+  "Will Crimson Dawn stay top guild?",
+  "Will the rope flip in overtime tonight?",
 ] as const;
 
 export function generatePredictions(

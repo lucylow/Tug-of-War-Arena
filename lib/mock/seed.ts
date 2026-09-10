@@ -59,10 +59,11 @@ export class SeededRandom {
 }
 
 export const DEFAULT_MOCK_SEED = 42;
-export const MOCK_USER_COUNT = 100;
-export const MOCK_NFT_COUNT = 500;
-export const MOCK_MATCH_COUNT = 200;
-export const MOCK_QUEST_COUNT = 10;
-export const MOCK_PREDICTION_COUNT = 5;
-export const MOCK_ACHIEVEMENT_COUNT = 8;
-export const MOCK_RENTAL_COUNT = 12;
+export const MOCK_USER_COUNT = 120;
+export const MOCK_NFT_COUNT = 560;
+export const MOCK_MATCH_COUNT = 240;
+export const MOCK_QUEST_COUNT = 18;
+export const MOCK_PREDICTION_COUNT = 12;
+export const MOCK_ACHIEVEMENT_COUNT = 16;
+export const MOCK_RENTAL_COUNT = 24;
+export const MOCK_ACTIVITY_COUNT = 18;

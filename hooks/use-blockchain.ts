@@ -56,6 +56,9 @@ export function useBlockchain() {
   const getFactions = useCallback(async () => (mockService ? mockService.getFactions() : []), [mockService]);
   const getPredictions = useCallback(async () => (mockService ? mockService.getPredictions() : []), [mockService]);
   const getAchievements = useCallback(async () => (mockService ? mockService.getAchievements() : []), [mockService]);
+  const getRooms = useCallback(async () => (mockService ? mockService.getRooms() : []), [mockService]);
+  const getWorldEvents = useCallback(async () => (mockService ? mockService.getWorldEvents() : []), [mockService]);
+  const getActivity = useCallback(async () => (mockService ? mockService.getActivity() : []), [mockService]);
   const getStakePositions = useCallback(
     async (userId?: string) => (mockService ? mockService.getStakePositions(userId ?? actorId) : []),
     [actorId, mockService],
@@ -117,6 +120,9 @@ export function useBlockchain() {
     getFactions,
     getPredictions,
     getAchievements,
+    getRooms,
+    getWorldEvents,
+    getActivity,
     getStakePositions,
     mintNFT,
     stakeNFT,

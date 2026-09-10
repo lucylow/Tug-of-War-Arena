@@ -1,3 +1,5 @@
+import { DEMO_ACCOUNT as DEMO_SESSION_ACCOUNT } from "@/lib/web3/session";
+
 export type WalletProviderId = "metamask" | "mobile" | "demo";
 
 export interface WalletSession {
@@ -74,7 +76,7 @@ export interface CompanionWalletAdapter {
   getChainId(): Promise<number | null>;
 }
 
-export const DEMO_WALLET_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+export const DEMO_WALLET_ADDRESS = DEMO_SESSION_ACCOUNT;
 export const DEMO_SIGNATURE = "DEMO_SIGNATURE";
 export const WALLET_CONNECT_TIMEOUT_MS = 20_000;
 export const WALLET_SESSION_STORAGE_KEY = "friendzone-wallet-session-v1";

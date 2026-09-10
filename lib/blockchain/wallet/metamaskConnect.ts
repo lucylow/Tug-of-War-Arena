@@ -2,7 +2,7 @@
  * Isolated MetaMask Connect boundary.
  * The rest of the app talks to WalletAdapter, not this module.
  */
-import { DAPP_METADATA, DEFAULT_HEX_CHAIN_ID, getSupportedNetworkMap } from "@/lib/web3/config";
+import { DEFAULT_HEX_CHAIN_ID, getDappMetadata, getSupportedNetworkMap } from "@/lib/web3/config";
 import type { Eip1193Provider } from "./types";
 import { createWalletError } from "./errors";
 import { withTimeout, WALLET_CONNECT_TIMEOUT_MS } from "./timeout";
@@ -36,11 +36,12 @@ export async function getMetaMaskConnectClient(): Promise<MetaMaskConnectClient 
           import("@metamask/connect-evm"),
           import("react-native"),
         ]);
+        const dapp = getDappMetadata();
         return (await createEVMClient({
           dapp: {
-            name: DAPP_METADATA.name,
-            url: DAPP_METADATA.url,
-            iconUrl: DAPP_METADATA.iconUrl,
+            name: dapp.name,
+            url: dapp.url,
+            iconUrl: dapp.iconUrl,
           },
           api: {
             supportedNetworks: getSupportedNetworkMap(),

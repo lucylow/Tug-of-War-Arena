@@ -25,6 +25,8 @@ describe("local hydration", () => {
     expect(parseHydratedValue("Plaza Sprint", resolveFriendzoneEventTitle)).toEqual({ status: "valid", value: "Plaza Sprint" });
     expect(parseHydratedValue("Wearable Rush", resolveFriendzoneEventTitle)).toEqual({ status: "valid", value: "Wearable Rush" });
     expect(parseHydratedValue("stale-event", resolveFriendzoneEventTitle)).toEqual({ status: "malformed" });
+    expect(parseHydratedValue("", resolveFriendzoneEventTitle)).toEqual({ status: "missing" });
+    expect(parseHydratedValue("   ", resolveFriendzoneEventTitle)).toEqual({ status: "missing" });
   });
 
   it("keeps malformed auto-advance preferences from changing the safe default", () => {

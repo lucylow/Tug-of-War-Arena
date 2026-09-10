@@ -21,6 +21,7 @@ export type { MockTxReceipt } from "@/lib/mock/fallback";
 export { MOCK_CONFIG, sampleDelayMs, sleep } from "@/lib/mock/config";
 export {
   DEFAULT_MOCK_SEED,
+  MOCK_ACTIVITY_COUNT,
   MOCK_ACHIEVEMENT_COUNT,
   MOCK_MATCH_COUNT,
   MOCK_NFT_COUNT,

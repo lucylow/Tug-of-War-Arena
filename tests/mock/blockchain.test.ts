@@ -141,12 +141,33 @@ describe("MockBlockchain", () => {
 
   it("maps the demo wallet account onto the seeded captain", async () => {
     const mock = new MockBlockchain(42, { userCount: 3, nftCount: 2, matchCount: 0 });
-    const { DEMO_ACCOUNT } = await import("../../lib/web3/session");
+    const { DEMO_ACCOUNT, LEGACY_DEMO_IDENTITY_ADDRESS } = await import("../../lib/web3/session");
     const captain = await mock.getCurrentUser();
     const alias = await mock.getUser(DEMO_ACCOUNT);
     expect(alias?.id).toBe(captain.id);
+    expect(await mock.getBalance(DEMO_ACCOUNT)).toBe(2500);
+    expect(await mock.getBalance(LEGACY_DEMO_IDENTITY_ADDRESS)).toBe(2500);
     const nft = await mock.mintNFT(DEMO_ACCOUNT, "Uncommon");
     expect(nft.ownerId).toBe(captain.id);
+    expect(nft.name).toContain("Uncommon");
+  });
+
+  it("seeds a localhost demo world with named crew, rooms, and events", async () => {
+    const mock = new MockBlockchain(42);
+    const users = await mock.getAllUsers();
+    expect(users[0]?.displayName).toBe("Arena Captain");
+    expect(users[1]?.displayName).toBe("RopeRanger");
+    expect(users[2]?.displayName).toBe("PixelPuller");
+    const rooms = await mock.getRooms();
+    expect(rooms.length).toBeGreaterThanOrEqual(6);
+    expect(rooms[0]?.title).toBe("Friday Night Pull");
+    const events = await mock.getWorldEvents();
+    expect(events.some((event) => event.status === "live")).toBe(true);
+    const activity = await mock.getActivity();
+    expect(activity.length).toBeGreaterThan(8);
+    const owned = await mock.getNFTs("user_0");
+    expect(owned.length).toBeGreaterThanOrEqual(8);
+    expect(owned.some((nft) => nft.rarity === "Legendary")).toBe(true);
   });
 
   it("places a prediction and deducts FZONE", async () => {

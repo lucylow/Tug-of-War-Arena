@@ -23,13 +23,13 @@ export const MOCK_CONFIG: MockConfig = {
   matchCreationDelayMs: 2000,
   eventEmitDelayMs: 100,
   matchResolveDelayMs: 5000,
-  userCount: 100,
-  nftCount: 500,
-  matchCount: 200,
-  questCount: 10,
-  predictionCount: 5,
-  achievementCount: 8,
-  rentalCount: 12,
+  userCount: 120,
+  nftCount: 560,
+  matchCount: 240,
+  questCount: 18,
+  predictionCount: 12,
+  achievementCount: 16,
+  rentalCount: 24,
 };
 
 export function sampleDelayMs(

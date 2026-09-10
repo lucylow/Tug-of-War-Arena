@@ -73,6 +73,7 @@ export class MockNFTContract {
     const nft: MockNFT = {
       id: this.world.nfts.length,
       ownerId,
+      name: `${rarityName} Wearable`,
       rarity: rarityName,
       powerBonus: RARITY_POWER[rarityName],
       speedBonus: RARITY_SPEED[rarityName],

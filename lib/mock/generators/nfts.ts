@@ -1,3 +1,4 @@
+import { WEARABLE_NAMES } from "@/lib/mock/generators/cast";
 import { SeededRandom } from "@/lib/mock/seed";
 
 export type Rarity = "Common" | "Uncommon" | "Rare" | "Epic" | "Legendary" | "Mythic";
@@ -43,6 +44,7 @@ export const RARITY_SPEED: Record<Rarity, number> = {
 export interface MockNFT {
   id: number;
   ownerId: string;
+  name: string;
   rarity: Rarity;
   powerBonus: number;
   speedBonus: number;
@@ -67,6 +69,7 @@ export function generateNFTs(totalCount: number, ownerIds: string[], random: See
     nfts.push({
       id: i,
       ownerId: ownerIds.length > 0 ? random.pick(ownerIds) : fallbackOwner,
+      name: WEARABLE_NAMES[i % WEARABLE_NAMES.length]!,
       rarity,
       powerBonus: RARITY_POWER[rarity],
       speedBonus: RARITY_SPEED[rarity],

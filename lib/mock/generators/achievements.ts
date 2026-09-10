@@ -19,6 +19,14 @@ const ACHIEVEMENT_TEMPLATES = [
   { title: "Faction Loyalist", description: "Pledge to Red or Blue.", badgeId: 5, xpBonus: 30 },
   { title: "Oracle", description: "Place a prediction-market wager.", badgeId: 6, xpBonus: 45 },
   { title: "Arena Legend", description: "Reach 25 wins.", badgeId: 7, xpBonus: 120 },
+  { title: "Plaza Regular", description: "Enter the World companion three times.", badgeId: 8, xpBonus: 20 },
+  { title: "Crew Captain", description: "Host a room with 4+ players.", badgeId: 9, xpBonus: 55 },
+  { title: "Sun Champion", description: "Win a match on the Sun crew.", badgeId: 10, xpBonus: 50 },
+  { title: "Moon Champion", description: "Win a match on the Moon crew.", badgeId: 11, xpBonus: 50 },
+  { title: "Inviter", description: "Share a Friendzone invite code.", badgeId: 12, xpBonus: 28 },
+  { title: "Rental Mogul", description: "Rent or list a wearable.", badgeId: 13, xpBonus: 32 },
+  { title: "Weekend Warrior", description: "Play during Weekend Pull.", badgeId: 14, xpBonus: 40 },
+  { title: "Friendzone Founder", description: "Stay in the demo world for a full session.", badgeId: 15, xpBonus: 15 },
 ] as const;
 
 export function generateAchievements(

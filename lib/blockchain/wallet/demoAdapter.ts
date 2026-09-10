@@ -1,3 +1,5 @@
+import { DEFAULT_CHAIN_ID } from "@/lib/web3/config";
+
 import { DEMO_SIGNATURE, DEMO_WALLET_ADDRESS, type WalletAdapter, type WalletSession } from "./types";
 import { persistWalletSession } from "./storage";
 import { WalletEventBus } from "./events";
@@ -15,7 +17,7 @@ export class DemoWalletAdapter implements WalletAdapter {
     this.session = {
       provider: "demo",
       address: DEMO_WALLET_ADDRESS,
-      chainId: null,
+      chainId: DEFAULT_CHAIN_ID,
       connectedAt: Date.now(),
       isDemo: true,
     };

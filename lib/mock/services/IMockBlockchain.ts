@@ -5,10 +5,13 @@ import type {
   Friend,
   Guild,
   LeaderboardEntry,
+  MockActivity,
   MockMatch,
   MockNFT,
   MockRental,
+  MockRoom,
   MockUser,
+  MockWorldEvent,
   PredictionMarket,
   Quest,
   Referral,
@@ -68,6 +71,10 @@ export interface IMockBlockchain {
   getRentals(): Promise<MockRental[]>;
   listRental(tokenId: number, ownerId: string, fee: number, durationHours: number): Promise<void>;
   rentNFT(tokenId: number, renterId: string): Promise<void>;
+
+  getRooms(): Promise<MockRoom[]>;
+  getWorldEvents(): Promise<MockWorldEvent[]>;
+  getActivity(): Promise<MockActivity[]>;
 
   on(eventName: string, callback: MockEventHandler): void;
   off(eventName: string, callback: MockEventHandler): void;

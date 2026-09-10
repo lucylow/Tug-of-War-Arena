@@ -105,14 +105,18 @@ function isMatchEntry(value: unknown): value is MatchEntry {
 }
 
 const leaderboard = [
-  { rank: 1, name: "RopeRanger", wins: 18, taps: 842 },
-  { rank: 2, name: "PixelPuller", wins: 15, taps: 716 },
-  { rank: 3, name: "NovaNina", wins: 12, taps: 644 },
-  { rank: 4, name: "You", wins: 8, taps: 503 },
-  { rank: 5, name: "MoonRunner", wins: 7, taps: 481 },
-  { rank: 6, name: "SunSpark", wins: 6, taps: 438 },
-  { rank: 7, name: "TorqueKid", wins: 5, taps: 392 },
-  { rank: 8, name: "CloudPull", wins: 4, taps: 327 },
+  { rank: 1, name: "RopeRanger", wins: 22, taps: 842 },
+  { rank: 2, name: "Arena Captain", wins: 18, taps: 790 },
+  { rank: 3, name: "PixelPuller", wins: 15, taps: 716 },
+  { rank: 4, name: "ManaMax", wins: 14, taps: 688 },
+  { rank: 5, name: "NovaNina", wins: 12, taps: 644 },
+  { rank: 6, name: "MoonRunner", wins: 11, taps: 481 },
+  { rank: 7, name: "DecentraDeb", wins: 10, taps: 470 },
+  { rank: 8, name: "SunSpark", wins: 9, taps: 438 },
+  { rank: 9, name: "TorqueKid", wins: 8, taps: 392 },
+  { rank: 10, name: "CloudPull", wins: 7, taps: 327 },
+  { rank: 11, name: "OrbitAce", wins: 6, taps: 301 },
+  { rank: 12, name: "NeonTug", wins: 5, taps: 274 },
 ];
 
 const demoCrew = [
@@ -120,8 +124,13 @@ const demoCrew = [
   { name: "PixelPuller", role: "Moon Crew scout", online: true },
   { name: "MoonRunner", role: "Building a streak", online: true },
   { name: "SunSpark", role: "Ready for Plaza Sprint", online: true },
+  { name: "ManaMax", role: "In Plaza", online: true },
+  { name: "DecentraDeb", role: "At Arena", online: true },
+  { name: "OrbitAce", role: "Friendzone lounge", online: true },
+  { name: "NeonTug", role: "Queued for a match", online: true },
   { name: "RopeRanger", role: "Watching the arena", online: false },
   { name: "TorqueKid", role: "Last seen 12m ago", online: false },
+  { name: "CloudPull", role: "Queued for a match", online: false },
 ];
 
 const demoFriendzoneContacts = [
@@ -614,7 +623,10 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!shouldWritePersistedState(persistenceWriteStartedRef.current, "rsvp-event")) return;
     let active = true;
-    writeLocalValue("tug-of-war-rsvp-event", rsvpEvent ?? "").then((ok) => {
+    const persist = rsvpEvent
+      ? writeLocalValue("tug-of-war-rsvp-event", rsvpEvent)
+      : removeLocalValues(["tug-of-war-rsvp-event"]);
+    persist.then((ok) => {
       if (active && !ok) setStorageWarning(true);
     });
     return () => {

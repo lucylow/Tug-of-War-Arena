@@ -8,3 +8,7 @@ export * from "@/lib/mock/generators/factions";
 export * from "@/lib/mock/generators/predictions";
 export * from "@/lib/mock/generators/staking";
 export * from "@/lib/mock/generators/achievements";
+export * from "@/lib/mock/generators/cast";
+export * from "@/lib/mock/generators/rooms";
+export * from "@/lib/mock/generators/events";
+export * from "@/lib/mock/generators/activity";

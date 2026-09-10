@@ -22,6 +22,14 @@ const QUEST_TEMPLATES = [
   { title: "Win with 2+ Streak", obj: "win_streak", target: 2, xp: 80, tokens: 25 },
   { title: "Refer a Friend", obj: "refer_friend", target: 1, xp: 90, tokens: 30 },
   { title: "Join a Guild", obj: "join_guild", target: 1, xp: 50, tokens: 15 },
+  { title: "Pull Together", obj: "crew_pulls", target: 100, xp: 45, tokens: 12 },
+  { title: "Plaza Presence", obj: "visit_plaza", target: 1, xp: 20, tokens: 4 },
+  { title: "Moonlight Duel", obj: "win_duel", target: 1, xp: 55, tokens: 14 },
+  { title: "Invite a Crewmate", obj: "invite_crew", target: 2, xp: 35, tokens: 8 },
+  { title: "Wear a Legendary", obj: "equip_legendary", target: 1, xp: 80, tokens: 22 },
+  { title: "Friday Night Pull", obj: "play_featured", target: 1, xp: 40, tokens: 10 },
+  { title: "Claim Stake Rewards", obj: "claim_stake", target: 1, xp: 25, tokens: 6 },
+  { title: "Place a Prediction", obj: "place_prediction", target: 1, xp: 30, tokens: 7 },
 ] as const;
 
 export function generateQuests(count: number): Quest[] {

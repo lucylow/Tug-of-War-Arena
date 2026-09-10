@@ -3,10 +3,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
+import { useDemoModeTick } from "@/hooks/use-demo-mode";
 import { MOBILE_COPY } from "@/shared/copy";
 import { matchFixture } from "@/shared/fixtures/matchFixture";
 import { missionFixture } from "@/shared/fixtures/missionFixture";
 import { roomFixture } from "@/shared/fixtures/roomFixture";
+import { DemoModeManager } from "@/lib/mock/DemoModeManager";
 
 import { MobileTutorial } from "./MobileTutorial";
 
@@ -19,7 +21,17 @@ type Props = {
 
 export function HomeHighlight({ onPlay, onEnterWorld }: Props) {
   const [welcome, setWelcome] = useState(false);
+  useDemoModeTick();
   const mission = missionFixture[0];
+  const world = DemoModeManager.getInstance().getOrCreateService().world;
+  const onlineCrew = world.users.slice(0, 12).filter((user) => Date.now() - user.lastActive.getTime() < 48 * 60 * 60 * 1000);
+  const featuredRoom = world.rooms[0] ?? {
+    title: roomFixture.featured.title,
+    players: roomFixture.featured.players,
+    maxPlayers: roomFixture.featured.maxPlayers,
+  };
+  const liveEvent = world.worldEvents.find((event) => event.status === "live");
+  const topRank = world.leaderboard[0];
 
   useEffect(() => {
     AsyncStorage.getItem(WELCOME_KEY)
@@ -39,12 +51,16 @@ export function HomeHighlight({ onPlay, onEnterWorld }: Props) {
       <MobileTutorial visible={welcome} onSkip={dismissWelcome} onComplete={dismissWelcome} />
       <View style={styles.card}>
         <Text style={styles.kicker}>FRIENDZONE</Text>
-        <Text style={styles.meta}>Crew: 7 online · DEMO</Text>
-        <Text style={styles.meta}>Arena: Active · {roomFixture.featured.title}</Text>
+        <Text style={styles.meta}>Crew: {Math.max(onlineCrew.length, 7)} online · DEMO</Text>
+        <Text style={styles.meta}>
+          Arena: Active · {featuredRoom.title} · {featuredRoom.players}/{featuredRoom.maxPlayers}
+        </Text>
         <Text style={styles.meta}>3D World: Ready · companion preview</Text>
         <Text style={styles.meta}>
-          Mission: {mission?.progress}/{mission?.target}
+          Mission: {mission?.title} {mission?.progress}/{mission?.target}
         </Text>
+        {liveEvent ? <Text style={styles.meta}>Live event: {liveEvent.title} · {liveEvent.rsvpCount} RSVP</Text> : null}
+        {topRank ? <Text style={styles.meta}>Leader: #{topRank.rank} {topRank.displayName}</Text> : null}
         <Text style={styles.meta}>Streak: {matchFixture.streak}</Text>
         <Text style={styles.score}>
           {matchFixture.playerPulls} vs {matchFixture.opponentPulls}

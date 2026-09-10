@@ -27,7 +27,7 @@ export function WalletStatusCard() {
     (status === "UNAVAILABLE"
       ? WALLET_UNAVAILABLE_MESSAGE
       : status === "DEMO"
-        ? "Demo identity only. Web3 is optional in this demo."
+        ? "Demo identity with a seeded Friendzone world. Connect MetaMask in Chrome if you want a live wallet."
         : status === "CONNECTED" && account
           ? formatAddress(account)
           : "Web3 is optional in this demo.");
