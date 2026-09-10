@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
 import { MOBILE_COPY } from "@/shared/copy";
@@ -6,33 +8,55 @@ import { matchFixture } from "@/shared/fixtures/matchFixture";
 import { missionFixture } from "@/shared/fixtures/missionFixture";
 import { roomFixture } from "@/shared/fixtures/roomFixture";
 
+import { MobileTutorial } from "./MobileTutorial";
+
+const WELCOME_KEY = "friendzone-welcome-seen";
+
 type Props = {
   onPlay?: () => void;
   onEnterWorld?: () => void;
 };
 
 export function HomeHighlight({ onPlay, onEnterWorld }: Props) {
+  const [welcome, setWelcome] = useState(false);
   const mission = missionFixture[0];
+
+  useEffect(() => {
+    AsyncStorage.getItem(WELCOME_KEY)
+      .then((seen) => {
+        if (!seen) setWelcome(true);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const dismissWelcome = () => {
+    setWelcome(false);
+    void AsyncStorage.setItem(WELCOME_KEY, "1");
+  };
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.kicker}>FRIENDZONE</Text>
-      <Text style={styles.meta}>Crew: 7 online</Text>
-      <Text style={styles.meta}>Arena: Active · {roomFixture.featured.title}</Text>
-      <Text style={styles.meta}>3D World: Ready</Text>
-      <Text style={styles.meta}>
-        Mission: {mission?.progress}/{mission?.target}
-      </Text>
-      <Text style={styles.meta}>Streak: {matchFixture.streak}</Text>
-      <Text style={styles.score}>
-        {matchFixture.playerPulls} vs {matchFixture.opponentPulls}
-      </Text>
-      <View style={styles.row}>
-        <Pressable accessibilityRole="button" hitSlop={12} onPress={onPlay} style={({ pressed }) => [styles.primary, pressed && styles.pressed]}>
-          <Text style={styles.primaryText}>{MOBILE_COPY.play}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" hitSlop={12} onPress={onEnterWorld} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-          <Text style={styles.secondaryText}>{MOBILE_COPY.enterWorld}</Text>
-        </Pressable>
+    <View>
+      <MobileTutorial visible={welcome} onSkip={dismissWelcome} onComplete={dismissWelcome} />
+      <View style={styles.card}>
+        <Text style={styles.kicker}>FRIENDZONE</Text>
+        <Text style={styles.meta}>Crew: 7 online</Text>
+        <Text style={styles.meta}>Arena: Active · {roomFixture.featured.title}</Text>
+        <Text style={styles.meta}>3D World: Ready</Text>
+        <Text style={styles.meta}>
+          Mission: {mission?.progress}/{mission?.target}
+        </Text>
+        <Text style={styles.meta}>Streak: {matchFixture.streak}</Text>
+        <Text style={styles.score}>
+          {matchFixture.playerPulls} vs {matchFixture.opponentPulls}
+        </Text>
+        <View style={styles.row}>
+          <Pressable accessibilityRole="button" hitSlop={12} onPress={onPlay} style={({ pressed }) => [styles.primary, pressed && styles.pressed]}>
+            <Text style={styles.primaryText}>{MOBILE_COPY.play}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" hitSlop={12} onPress={onEnterWorld} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
+            <Text style={styles.secondaryText}>{MOBILE_COPY.enterWorld}</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

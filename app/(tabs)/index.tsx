@@ -25,7 +25,7 @@ import { DemoModeToggle } from "@/components/demo/DemoModeToggle";
 import { DemoWorldPanel } from "@/components/demo/DemoWorldPanel";
 import { SocialHub } from "@/components/social";
 import { World2DPreview, WorldCompanionCard, WorldEntryCard } from "@/components/world";
-import { BlockchainScreen, CrewScreen, GovernanceScreen, HomeHighlight, MobileTutorial, SurfaceErrorBoundary, WorldCompanionScreen } from "@/components/friendzone";
+import { BlockchainScreen, CrewScreen, GovernanceScreen, HomeHighlight, SurfaceErrorBoundary, WorldCompanionScreen } from "@/components/friendzone";
 import { WalletStatusCard } from "@/components/wallet/WalletStatusCard";
 import { MultiplayerHub } from "@/components/multiplayer";
 import { useHybridWorld } from "@/hooks/use-hybrid-world";

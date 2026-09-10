@@ -528,7 +528,7 @@ export function resolveJudgeFullWalkthroughLifecycle(event: JudgeFullWalkthrough
 
 export function deriveJudgeWalkthroughStep(
   flow: FriendzoneDemoFlowStep,
-  screen: "home" | "social" | "settings" | "lobby" | "arena" | "results" | "leaderboard",
+  screen: string,
 ): JudgeWalkthroughStep {
   if (screen === "results") return 4;
   if (screen === "arena") return 3;
