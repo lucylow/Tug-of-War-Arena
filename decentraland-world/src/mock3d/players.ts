@@ -1,0 +1,1 @@
+export { createPlayers } from './generator'

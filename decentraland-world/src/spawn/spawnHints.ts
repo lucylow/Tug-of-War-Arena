@@ -1,0 +1,1 @@
+export { createSpawnHints } from './spawnArea'

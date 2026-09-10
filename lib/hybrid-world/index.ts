@@ -53,6 +53,7 @@ export {
   createHybridWorldDatasetSafe,
   createScoreboard,
   normalizeHybridWorldDataset,
+  resetDemoUniverse,
 } from "./generator";
 export { projectWorldToMobile2D } from "./projection";
 export { discoverWorld, selectDiscoverablePlayers } from "./discovery";

@@ -4,7 +4,8 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from "rea
 import { WALLET_COLORS as C } from "@/components/wallet/palette";
 import { WalletMark } from "@/components/wallet/WalletMark";
 import { useBlockchain } from "@/hooks/use-blockchain";
-import { classifyWalletError, formatWalletError, formatWalletErrorTitle } from "@/lib/web3/errors";
+import { normalizeWalletError } from "@/lib/blockchain/wallet/errors";
+import { classifyWalletError, formatWalletErrorTitle } from "@/lib/web3/errors";
 import { formatWalletModeBadge } from "@/lib/web3/format";
 import type { ConnectionMode, ConnectModeRequest } from "@/lib/web3/types";
 
@@ -15,7 +16,7 @@ type ConnectWalletButtonProps = {
 };
 
 export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }: ConnectWalletButtonProps) {
-  const { account, isConnected, isConnecting, connectionMode, connect, disconnect, formatAddress } = useBlockchain();
+  const { account, isConnected, isConnecting, connectionMode, connect, continueDemo, disconnect, formatAddress } = useBlockchain();
   const live = connectionMode === "live";
 
   const handlePress = async () => {
@@ -32,9 +33,9 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
                   onStatus?.({ connected: false, mode: null, message: "Wallet disconnected. Offline play remains available." });
                 })
                 .catch((error) => {
-                  const message = formatWalletError(error);
-                  Alert.alert(formatWalletErrorTitle(error), message);
-                  onStatus?.({ connected: false, mode: null, message });
+                  const normalized = normalizeWalletError(error);
+                  Alert.alert(formatWalletErrorTitle(error), normalized.message);
+                  onStatus?.({ connected: false, mode: null, message: normalized.message });
                 });
             },
           },
@@ -45,13 +46,25 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
       onStatus?.({
         connected: true,
         mode: nextMode,
-        message: nextMode === "live" ? "MetaMask connected. Local reward receipt is ready." : "Demo wallet connected. Local reward receipt is ready.",
+        message: nextMode === "live" ? "Wallet connected. Local reward receipt is ready." : "Demo wallet connected. Web3 is optional in this demo.",
       });
     } catch (error) {
-      const message = formatWalletError(error);
-      if (__DEV__) console.warn("Connect wallet failed:", classifyWalletError(error), message, error);
-      Alert.alert(formatWalletErrorTitle(error), message);
-      onStatus?.({ connected: false, mode: null, message });
+      const normalized = normalizeWalletError(error);
+      if (__DEV__) console.warn("Connect wallet failed:", classifyWalletError(error), normalized, error);
+      Alert.alert(formatWalletErrorTitle(error), normalized.message, [
+        { text: "Try Again", onPress: () => { void handlePress(); } },
+        {
+          text: "Continue Demo",
+          onPress: () => {
+            void continueDemo()
+              .then((nextMode) => {
+                onStatus?.({ connected: true, mode: nextMode, message: "Demo wallet connected. Web3 is optional in this demo." });
+              })
+              .catch(() => undefined);
+          },
+        },
+      ]);
+      onStatus?.({ connected: false, mode: null, message: normalized.message });
     }
   };
 
@@ -83,7 +96,7 @@ export function ConnectWalletButton({ mode = "auto", compact = false, onStatus }
           {isConnecting ? "CONNECTING..." : isConnected && account ? formatAddress(account) : "CONNECT WALLET"}
         </Text>
         {!compact && (
-          <Text style={styles.hint}>{isConnected ? (live ? "MetaMask session" : "Local demo session") : "MetaMask or demo"}</Text>
+          <Text style={styles.hint}>{isConnected ? (live ? "MetaMask session" : "DEMO identity") : "Web3 optional"}</Text>
         )}
       </View>
       <View style={[styles.badge, live && styles.badgeLive, isConnected && !live && styles.badgeDemo]}>

@@ -1,8 +1,8 @@
-# Tug of War Arena
+# Tug of War Arena: Friendzone
 
-> **A mobile-first, social tug-of-war experience designed for the Decentraland / Friendzone ecosystem.**
->
-> **Core idea:** turn a simple competitive mechanic into a repeatable social loop: **join → pull → react → progress → invite → rematch**.
+> **A hybrid Friendzone experience: a React Native mobile companion plus a real Decentraland SDK7 3D World, sharing one social domain. Web3 is optional.**
+
+The native Decentraland client currently **does not run on mobile devices**. This repository does **not** treat the React Native screens as the World. The World is `decentraland-world/` (SDK7). The Expo app is the portrait companion.
 
 [![React Native](https://img.shields.io/badge/React%20Native-0.81.x-61DAFB?logo=react)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-54-000020?logo=expo)](https://expo.dev/)
@@ -62,11 +62,59 @@
 
 ## Overview
 
-Tug of War Arena is a **portrait-first React Native / Expo experience** centered around a very simple interaction: a player pulls a virtual rope against another player or opposing team.
+Tug of War Arena: Friendzone is a **hybrid** product:
 
-The project is deliberately built around the idea that the gameplay mechanic should be understandable in seconds, but the surrounding system should make the experience worth returning to.
+1. **React Native mobile companion** — crew, rooms, missions, social, wallet status, World preview
+2. **Decentraland SDK7 3D World** — spawn plaza, arena, rope, bases, boards, governance, achievements
+3. **Shared Friendzone domain** — players, rooms, matches, missions, social state
+4. **Optional blockchain layer** — match proof after play, never a prerequisite
 
-The Friendzone-focused upgrade adds a complete **social companion layer** around the arena:
+The portrait Expo app is a companion. The 3D destination is `decentraland-world/` (SDK7). A compatibility plaza also exists in `scene/`.
+
+```mermaid
+flowchart LR
+    MOBILE[React Native Mobile]
+    DOMAIN[Shared Friendzone Domain]
+    WORLD[Decentraland SDK7 World]
+    SERVER[Game / Social Server]
+    WEB3[Optional Web3]
+    MOCK[Deterministic Demo Data]
+
+    MOCK --> DOMAIN
+    DOMAIN --> MOBILE
+    DOMAIN --> WORLD
+    MOBILE --> SERVER
+    WORLD --> SERVER
+    MOBILE --> WEB3
+    WORLD --> WEB3
+```
+
+```mermaid
+flowchart TB
+    DISCOVER[Discover]
+    JOIN[Join Crew]
+    PLAY2D[2D Mobile Companion]
+    PLAY3D[3D Decentraland World]
+    RESULT[Match Result]
+    PROGRESS[Progress]
+    SOCIAL[Social]
+    PROOF[Optional Blockchain Proof]
+
+    DISCOVER --> JOIN
+    JOIN --> PLAY2D
+    JOIN --> PLAY3D
+    PLAY2D --> RESULT
+    PLAY3D --> RESULT
+    RESULT --> PROGRESS
+    RESULT --> SOCIAL
+    RESULT --> PROOF
+    PROGRESS --> JOIN
+    SOCIAL --> JOIN
+```
+
+See `docs/MOBILE_3D_HYBRID_ARCHITECTURE.md`, `docs/DECENTRALAND_WORLD_ARCHITECTURE.md`, `docs/WALLET_RUNTIME_ARCHITECTURE.md`, and `docs/FINAL_DEMO_RUNBOOK.md`.
+
+---
 
 * room creation and joining
 * invite codes
@@ -310,6 +358,118 @@ flowchart TD
     DOMAIN --> WORLD
     DOMAIN --> TELEMETRY
 ```
+
+### Hybrid runtime
+
+```text
+                  TUG OF WAR ARENA
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+   MOBILE COMPANION              DECENTRALAND WORLD
+     React Native / Expo            SDK7 / 3D
+          │                             │
+     Crew / Rooms                 Arena / Rope
+     Wallet UI                    3D Players
+     2D World Map                 Events / Missions
+          │                             │
+          └──────────────┬──────────────┘
+                         │
+                   SHARED WORLD FEED
+                         │
+                  OPTIONAL WEB3
+                         │
+                WALLET / MATCH PROOF
+```
+
+```mermaid
+flowchart LR
+    MOBILE[React Native Mobile]
+    SHARED[Shared World Feed]
+    DCL[Decentraland SDK7 World]
+    SERVER[Backend]
+    WEB3[Optional Blockchain]
+
+    MOBILE <--> SHARED
+    DCL <--> SHARED
+    MOBILE <--> SERVER
+    DCL <--> SERVER
+    MOBILE --> WEB3
+    DCL --> WEB3
+```
+
+```mermaid
+flowchart TD
+    USER[Player]
+    UI[Wallet UI]
+    MANAGER[Wallet Manager]
+    RUNTIME[Runtime Detector]
+    WEB[Browser Wallet Adapter]
+    MOBILEW[Mobile Wallet Adapter]
+    DEMO[Demo Wallet]
+    CHAIN[Blockchain]
+
+    USER --> UI
+    UI --> MANAGER
+    MANAGER --> RUNTIME
+    RUNTIME --> WEB
+    RUNTIME --> MOBILEW
+    RUNTIME --> DEMO
+    WEB --> CHAIN
+    MOBILEW --> CHAIN
+```
+
+```mermaid
+flowchart LR
+    APP[Mobile Companion]
+    WORLD[Decentraland 3D World]
+    FEED[Shared World Feed]
+    GAME[Match State]
+    SOCIAL[Social State]
+    PROGRESS[Progression]
+    WEB3[Optional Web3]
+
+    APP --> FEED
+    WORLD --> FEED
+    FEED --> GAME
+    FEED --> SOCIAL
+    GAME --> PROGRESS
+    SOCIAL --> PROGRESS
+    PROGRESS --> APP
+    PROGRESS --> WORLD
+    PROGRESS --> WEB3
+```
+
+```mermaid
+flowchart TD
+    PLAY[Play]
+    RESULT[Match Result]
+    PROOF[Match Proof]
+    WALLET[Optional Wallet]
+    SIGN[Optional Signature]
+    CHAIN[Optional Chain Record]
+    DEMO[Demo Fallback]
+
+    PLAY --> RESULT
+    RESULT --> PROOF
+    PROOF --> WALLET
+    WALLET --> SIGN
+    SIGN --> CHAIN
+    WALLET --> DEMO
+    PROOF --> DEMO
+```
+
+Wallet connection is implemented with runtime detection, guarded provider access, explicit rejection/timeout/network handling, retry behavior, and demo fallback. Live compatibility still depends on the installed wallet/runtime.
+
+The Expo app is the mobile companion. The SDK7 World lives in `scene/` (production graphics) and `decentraland-world/` (isolated Friendzone layout). Scene code never imports React Native or `window.ethereum`.
+
+### Data modes
+
+- **demo** — all synthetic, deterministic, `origin: "demo"`
+- **live** — backend / wallet data only
+- **hybrid** (default hackathon) — real local player + seeded ambient crew. Never claims real platform-wide population.
+
+Wallet troubleshooting: [docs/WALLET_TROUBLESHOOTING.md](docs/WALLET_TROUBLESHOOTING.md). World deploy: [docs/DECENTRALAND_WORLD_DEPLOYMENT.md](docs/DECENTRALAND_WORLD_DEPLOYMENT.md). Demo path: [docs/FINAL_DEMO_SCRIPT.md](docs/FINAL_DEMO_SCRIPT.md).
 
 The most important boundary is:
 
@@ -1096,155 +1256,44 @@ The current in-memory server is a prototype boundary, not a production anti-chea
 
 ```text
 .
-├── app/
-│   ├── _layout.tsx
-│   └── (tabs)/
-│       ├── _layout.tsx
-│       ├── index.tsx
-│       └── friendzone.tsx
-│
-├── components/
-│   ├── friendzone/
-│   │   ├── FriendzoneHub.tsx
-│   │   ├── FriendzoneCard.tsx
-│   │   ├── Leaderboard.tsx
-│   │   ├── MatchRecap.tsx
-│   │   ├── MissionCard.tsx
-│   │   ├── MobileArena.tsx
-│   │   ├── NetworkHealthCard.tsx
-│   │   ├── PartyPanel.tsx
-│   │   ├── PresenceStrip.tsx
-│   │   ├── ReactionBar.tsx
-│   │   ├── RetentionCard.tsx
-│   │   └── StatPill.tsx
-│   │
-│   └── shared application components...
-│
-├── contracts/                          # Hardhat workspace (FZONE, arena, NFTs, DAO)
-│   ├── src/core/
-│   ├── src/social/
-│   ├── src/randomness/
-│   ├── src/tournaments/
-│   ├── src/governance/
-│   └── README.md
-│
+├── app/                         # Expo Router mobile companion
+├── components/                  # React Native UI (wallet, world preview, arena)
 ├── lib/
-│   ├── friendzone/
-│   │   ├── accessibility.ts
-│   │   ├── actions.ts
-│   │   ├── analytics.ts
-│   │   ├── bridge.ts
-│   │   ├── clock.ts
-│   │   ├── constants.ts
-│   │   ├── demo.ts
-│   │   ├── error.ts
-│   │   ├── feature-flags.ts
-│   │   ├── ids.ts
-│   │   ├── leaderboard.ts
-│   │   ├── migrations.ts
-│   │   ├── missions.ts
-│   │   ├── network-client.ts
-│   │   ├── network.ts
-│   │   ├── party.ts
-│   │   ├── performance.ts
-│   │   ├── profile.ts
-│   │   ├── queue.ts
-│   │   ├── reactions.ts
-│   │   ├── reducer.ts
-│   │   ├── retention.ts
-│   │   ├── scoring.ts
-│   │   ├── selectors.ts
-│   │   ├── share.ts
-│   │   ├── storage.ts
-│   │   ├── streaks.ts
-│   │   ├── telemetry.ts
-│   │   ├── types.ts
-│   │   └── validation.ts
-│   │
-│   ├── game-rules.ts
-│   ├── mobile-ux/              # Touch geometry, haptic/pull budgets, visibility FPS
-│   ├── local-persistence.ts
-│   ├── web3/                   # Contract addresses + ABIs (offline-safe until deployed)
-│   └── other original app modules...
-│
-├── server/
-│   ├── routers.ts
-│   ├── storage.ts
-│   └── _core/
-│
-├── scene/                              # Decentraland SDK 7 3D arena
-│   ├── src/index.ts
-│   ├── src/entities/
-│   ├── src/systems/
-│   ├── src/logic/
-│   ├── models/
-│   └── README.md
-│
+│   ├── runtime/                 # web / ios / android / server detection
+│   ├── blockchain/              # wallet adapters, network, match proof
+│   ├── world/                   # 2D projection of the shared WorldFeed
+│   ├── friendzone/              # companion re-exports of the shared protocol
+│   ├── hybrid-world/            # existing 2D/3D demo universe
+│   └── web3/                    # live contract helpers (browser/native only)
+├── shared/
+│   ├── friendzone-world-protocol.ts
+│   └── demo-world.ts
+├── server/                      # optional tRPC backend
+├── decentraland-world/          # SDK7 3D World (this is the World)
+├── scene/                       # compatibility SDK7 plaza
+├── contracts/                   # optional Solidity suite
 ├── tests/
-│   ├── friendzone/
-│   │   ├── missions.test.ts
-│   │   ├── party.test.ts
-│   │   ├── retention.test.ts
-│   │   ├── scoring.test.ts
-│   │   ├── streaks.test.ts
-│   │   └── validation.test.ts
-│   └── original project tests...
-│
-├── docs/
-│   ├── FRIENDZONE_UPGRADE_ARCHITECTURE.md
-│   ├── MOBILE_TEST_PLAN.md
-│   ├── IMPLEMENTATION_MATRIX.md
-│   ├── SUBMISSION_RUNBOOK.md
-│   ├── CODEBASE_INDEX.md
-│   └── runtime-notes.md
-│
-├── scripts/
-├── package.json
-├── app.config.ts
-└── tsconfig.json
+└── docs/
 ```
-
----
 
 # Important Files
 
-| File                                          | Responsibility                     |
-| --------------------------------------------- | ---------------------------------- |
-| `app/(tabs)/friendzone.tsx`                   | Friendzone route entry             |
-| `app/(tabs)/_layout.tsx`                      | Crew/Home tab registration         |
-| `components/friendzone/FriendzoneHub.tsx`     | Friendzone screen orchestration    |
-| `components/friendzone/MobileArena.tsx`       | One-thumb game surface             |
-| `components/friendzone/PartyPanel.tsx`        | Room creation/join/invite UI       |
-| `components/friendzone/PresenceStrip.tsx`     | Crew presence                      |
-| `components/friendzone/ReactionBar.tsx`       | Social reactions                   |
-| `components/friendzone/MissionCard.tsx`       | Daily missions                     |
-| `components/friendzone/MatchRecap.tsx`        | Match result presentation          |
-| `components/friendzone/Leaderboard.tsx`       | Social ranking presentation        |
-| `components/friendzone/NetworkHealthCard.tsx` | Connectivity state                 |
-| `components/friendzone/RetentionCard.tsx`     | Rematch/return loop                |
-| `lib/friendzone/reducer.ts`                   | Immutable domain state transitions |
-| `lib/friendzone/actions.ts`                   | Application commands               |
-| `lib/friendzone/scoring.ts`                   | Pull/scoring rules                 |
-| `lib/friendzone/streaks.ts`                   | Streak calculations                |
-| `lib/friendzone/missions.ts`                  | Mission progression                |
-| `lib/friendzone/party.ts`                     | Room/party primitives              |
-| `lib/friendzone/share.ts`                     | Invite sharing/copy                |
-| `lib/friendzone/bridge.ts`                    | Deep-link bridge                   |
-| `lib/friendzone/storage.ts`                   | Snapshot persistence               |
-| `lib/friendzone/network-client.ts`            | HTTP multiplayer boundary          |
-| `lib/friendzone/queue.ts`                     | Offline outbox                     |
-| `contracts/src/core/TugOfWarArena.sol`                | On-chain match staking and operator settlement |
-| `lib/web3/index.ts`                                   | Offline-safe ABI + address boundary            |
-| `scene/src/index.ts`                              | Decentraland SDK 7 arena bootstrap             |
-| `scene/src/logic/mapping.ts`                      | Pull-to-world mapping shared with tests        |
-| `components/MobileArena.tsx`                  | Re-export of EnhancedMobileArena   |
-| `components/mobile/EnhancedMobileArena.tsx`   | One-thumb arena with budgets       |
-| `components/mobile/PullControl.tsx`           | 136pt PULL control                 |
-| `lib/mobile-ux/index.ts`                      | Touch, throttle, haptic, FPS APIs  |
-| `app/dev/mobile-ux-lab.tsx`                   | Development-only Mobile UX Lab     |
-| `tests/mobile-ux-touch.test.ts`               | Touch geometry                     |
-| `tests/mobile-ux-throttle.test.ts`            | Pull/reaction/haptic gates         |
-| `docs/MOBILE_UX_TOUCH_PERFORMANCE_25_PLUS_PAGES.md` | Implementation guide          |
+| File | Responsibility |
+| --- | --- |
+| `decentraland-world/src/index.ts` | SDK7 World bootstrap |
+| `decentraland-world/scene.json` | SDK7 scene + Worlds NAME placeholder |
+| `shared/friendzone-world-protocol.ts` | Shared 2D/3D protocol |
+| `shared/demo-world.ts` | Canonical demo seed |
+| `lib/runtime/platform.ts` | Runtime detection |
+| `lib/blockchain/wallet/` | Wallet adapters and error normalization |
+| `lib/world/projection.ts` | WorldFeed → mobile cards |
+| `components/world/WorldEntryCard.tsx` | Companion Enter World surface |
+| `components/friendzone/WorldMiniMap.tsx` | 2D mini-map from world positions |
+| `components/wallet/WalletStatusCard.tsx` | Recoverable wallet UX |
+| `app/(tabs)/index.tsx` | Mobile companion home |
+
+---
+
 
 ---
 
@@ -1387,11 +1436,20 @@ Then use the Expo-provided development URL.
 
 ## Decentraland scene
 
+The hackathon World is `decentraland-world/` (SDK7, `@dcl/sdk`):
+
 ```bash
-cd scene
+cd decentraland-world
 npm install
-npm start
+npm run start
+npm run build
 ```
+
+Replace `YOUR_WORLD_NAME.dcl.eth` in `decentraland-world/scene.json` before `npm run deploy`.
+
+A compatibility plaza remains in `scene/` (`pnpm scene:start`). The React Native app does not embed the Decentraland engine.
+
+---
 
 Or from the repository root, after the scene dependencies are installed:
 
@@ -1844,9 +1902,10 @@ This repository is a hackathon-oriented mobile build with a production-minded ar
 2. The local mobile experience is designed to remain usable even when multiplayer infrastructure is unavailable.
 3. The HTTP multiplayer adapter is a boundary for integration rather than proof of global-scale realtime infrastructure.
 4. High-frequency pulls are not posted on-chain. The `contracts/` suite settles matches through a match operator (the game server). The Expo demo keeps minting optional until `lib/web3/addresses.ts` is populated from a deploy.
-5. The React Native app should be presented alongside the actual eligible world/deployment experience where the hackathon rules require a world-based submission. Preview that world from `scene/` with `npm start`.
-6. The 3D plaza simulates match state locally until a Colyseus (or equivalent) room is registered through `registerArenaTransport`.
-7. The DAO Governance Plaza is a discovery/education layer. Binding votes stay on [governance.decentraland.org](https://governance.decentraland.org/); the scene does not hold keys or cast votes.
+5. High-frequency pulls are not posted on-chain. Optional match proofs hash a finished result off-chain.
+6. The React Native app is the mobile companion. The SDK7 World is `decentraland-world/`. Preview it with `npm run start` there.
+7. The native Decentraland client currently does not run on mobile devices.
+8. The DAO Governance Plaza is a discovery/education layer. Binding votes stay on [governance.decentraland.org](https://governance.decentraland.org/).
 
 Being explicit about these boundaries improves the credibility of the project.
 

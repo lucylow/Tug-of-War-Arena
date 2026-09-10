@@ -67,7 +67,7 @@ describe("WalletService", () => {
   it("surfaces live connection failures when the user rejects", async () => {
     vi.mocked(connectLiveSession).mockRejectedValueOnce({ code: 4001, message: "User rejected" });
     const wallet = WalletService.getInstance();
-    await expect(wallet.connect()).rejects.toThrow("Connection was rejected in MetaMask.");
+    await expect(wallet.connect()).rejects.toThrow("Wallet connection canceled.");
   });
 
   it("falls back to a seeded demo wallet when live connect is unavailable", async () => {

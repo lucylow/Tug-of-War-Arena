@@ -11,6 +11,8 @@ export const ENABLE_NETWORK_SYNC = false
 export const ENABLE_DEMO_SINE_ROPE = true
 export const ENABLE_CLICK_TO_PULL = true
 export const ENABLE_ADVANCED_VISUALS = true
+/** Pastel sky, stage, rails, badges, and other decorative 3D dressing. Independent of gameplay. */
+export const ENABLE_WORLD_GRAPHICS = true
 /** Off until MP3s exist in `sounds/` — missing clips error on the mobile explorer. */
 export const ENABLE_SCENE_AUDIO = false
 

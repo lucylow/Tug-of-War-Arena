@@ -1,36 +1,16 @@
+import { canAccessBrowserEthereum } from "@/lib/runtime";
+import { canAccessInjectedEthereum } from "@/lib/runtime/runtime";
+import { getBrowserEthereumProvider, hasInjectedMetaMask as hasMetaMask } from "@/lib/blockchain/wallet/provider";
 import type { Eip1193Like } from "@/lib/web3/types";
 
-type InjectedEthereum = Eip1193Like & {
-  isMetaMask?: boolean;
-  providers?: InjectedEthereum[];
-};
-
-function isRequestProvider(value: unknown): value is InjectedEthereum {
-  if (!value || typeof value !== "object") return false;
-  return typeof (value as { request?: unknown }).request === "function";
-}
-
-function injectedCandidates(ethereum: InjectedEthereum | undefined): InjectedEthereum[] {
-  if (!ethereum) return [];
-  const listed = Array.isArray(ethereum.providers) ? ethereum.providers : [];
-  const candidates: InjectedEthereum[] = [];
-  for (const provider of [...listed, ethereum]) {
-    if (isRequestProvider(provider)) candidates.push(provider);
-  }
-  return candidates;
-}
-
 export function getInjectedProvider(): Eip1193Like | null {
-  const ethereum = (globalThis as { ethereum?: InjectedEthereum }).ethereum;
-  const candidates = injectedCandidates(ethereum);
-  if (candidates.length === 0) return null;
-  return candidates.find((provider) => provider.isMetaMask) ?? candidates[0] ?? null;
+  if (!canAccessBrowserEthereum() || !canAccessInjectedEthereum()) return null;
+  return getBrowserEthereumProvider();
 }
 
 export function hasInjectedMetaMask(): boolean {
-  return injectedCandidates((globalThis as { ethereum?: InjectedEthereum }).ethereum).some(
-    (provider) => provider.isMetaMask,
-  );
+  if (!canAccessBrowserEthereum() || !canAccessInjectedEthereum()) return false;
+  return hasMetaMask();
 }
 
 export async function isLiveWalletAvailable(): Promise<boolean> {

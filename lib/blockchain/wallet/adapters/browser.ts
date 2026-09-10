@@ -1,0 +1,1 @@
+export { BrowserWalletAdapter } from "../browserAdapter";

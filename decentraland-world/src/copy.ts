@@ -1,0 +1,17 @@
+export const COPY = {
+  welcome: 'WELCOME TO FRIENDZONE',
+  chooseCrew: 'CHOOSE YOUR CREW',
+  enterArena: 'ENTER THE ARENA',
+  enterWorld: 'ENTER WORLD',
+  pull: 'PULL',
+  rematch: 'REMATCH',
+  react: 'REACT',
+  viewEvents: 'VIEW EVENTS',
+  governance: 'GOVERNANCE',
+  achievements: 'ACHIEVEMENTS',
+  poll: 'POLL',
+  draft: 'DRAFT',
+  participate: 'PARTICIPATE',
+  officialDao: 'Continue to the official governance interface.',
+  demoLeaderboard: 'DEMO LEADERBOARD',
+} as const

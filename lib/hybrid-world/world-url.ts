@@ -4,7 +4,14 @@ export function isDecentralandWorldUrl(url: string): boolean {
   if (typeof url !== "string" || !url.trim()) return false;
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
+    if (parsed.protocol === "javascript:" || parsed.protocol === "data:" || parsed.protocol === "file:") {
+      return false;
+    }
+    if (parsed.protocol === "https:") return Boolean(parsed.hostname);
+    if (parsed.protocol === "http:") {
+      return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    }
+    return parsed.protocol === "decentraland:" || parsed.protocol === "friendzone:";
   } catch {
     return false;
   }

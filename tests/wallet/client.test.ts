@@ -22,6 +22,7 @@ vi.mock("@metamask/connect-evm", () => ({
 
 import { connectLiveSession, requestWallet, resetMetaMaskClientForTests } from "../../lib/web3/client";
 import { formatWalletError, formatWalletErrorTitle, shouldFallbackToDemo } from "../../lib/web3/errors";
+import { setRuntimeForTests } from "../../lib/runtime";
 
 function setEthereum(value: unknown) {
   (globalThis as { ethereum?: unknown }).ethereum = value;
@@ -30,11 +31,13 @@ function setEthereum(value: unknown) {
 describe("live MetaMask connection", () => {
   beforeEach(() => {
     resetMetaMaskClientForTests();
+    setRuntimeForTests("web");
     delete (globalThis as { ethereum?: unknown }).ethereum;
   });
 
   afterEach(() => {
     resetMetaMaskClientForTests();
+    setRuntimeForTests(null);
     delete (globalThis as { ethereum?: unknown }).ethereum;
     vi.useRealTimers();
   });
@@ -62,17 +65,13 @@ describe("live MetaMask connection", () => {
       },
     });
 
-    await expect(connectLiveSession()).rejects.toThrow(
-      "MetaMask could not connect. Unlock the extension, approve this site if prompted, then try again.",
-    );
+    await expect(connectLiveSession()).rejects.toThrow("Wallet connection failed.");
     expect(shouldFallbackToDemo(new Error("Failed to connect to MetaMask"))).toBe(false);
   });
 
   it("falls back to demo in auto-mode only when MetaMask is not injected", async () => {
     expect(shouldFallbackToDemo(new Error("Failed to connect to MetaMask"))).toBe(true);
-    await expect(connectLiveSession()).rejects.toThrow(
-      "MetaMask could not connect. Unlock the extension, approve this site if prompted, then try again.",
-    );
+    await expect(connectLiveSession()).rejects.toThrow("MetaMask is not available on this device.");
   });
 
   it("maps empty accounts to an unlock/select-account error", async () => {

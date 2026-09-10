@@ -44,7 +44,7 @@ export function useHybridWorld(initialScenario: DemoScenario = "active-match") {
   const refresh = useCallback(() => {
     setGeneration((value) => value + 1);
     setError(null);
-    setStatus("Demo universe refreshed from seed 20260909");
+    setStatus("Demo universe refreshed from seed 20260910");
   }, []);
 
   const openWorld = useCallback(async () => {

@@ -27,6 +27,7 @@
     "node_modules",
     "dist",
     "contracts",
-    "scene"
+    "scene",
+    "decentraland-world"
   ]
 }

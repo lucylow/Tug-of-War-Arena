@@ -1,0 +1,32 @@
+export type {
+  EventKind,
+  MobileEventCard,
+  MobileMissionCard,
+  MobilePresenceCard,
+  MobileRoomCard,
+  MobileWorldProjection,
+  Presence,
+  RoomPhase,
+  Team,
+  WorldActivity,
+  WorldEvent,
+  WorldFeed,
+  WorldGovernance,
+  WorldMatchSummary,
+  WorldMission,
+  WorldPlayer,
+  WorldRoom,
+  WorldVec3,
+} from "../../shared/friendzone-world-protocol";
+
+export {
+  createCanonicalWorldFeed,
+  FEATURED_EVENT_TITLE,
+  FEATURED_MISSION_TITLE,
+  FEATURED_ROOM_CODE,
+  FEATURED_ROOM_TITLE,
+  parseWorldFeed,
+  parseWorldFeedOrFallback,
+  resetDemoUniverse,
+  serializeWorldFeed,
+} from "../../shared/demo-world";

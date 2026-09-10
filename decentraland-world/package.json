@@ -1,0 +1,22 @@
+{
+  "name": "friendzone-decentraland-world",
+  "description": "Tug of War Arena: Friendzone — Decentraland SDK7 3D World",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "sdk-commands build",
+    "lint": "sdk-commands build",
+    "start": "sdk-commands start",
+    "start:mobile": "sdk-commands start --mobile",
+    "deploy": "sdk-commands deploy",
+    "validate": "sdk-commands build"
+  },
+  "devDependencies": {
+    "@dcl/js-runtime": "latest",
+    "@dcl/sdk": "latest"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -34,10 +34,11 @@ Mobile-specific behavior (see `src/logic/mobileRuntime.ts`):
 
 ## What is in the scene
 
-Walk the plaza in this order: **entrance → crew pads → arena → pull/rematch → hybrid scoreboard / missions → DAO Governance Plaza → room discovery / event boards → portals**.
+Walk the plaza in this order: **Friendzone sign → gateway frames → entrance → crew pads → arena stage → pull/rematch → hybrid scoreboard / missions → DAO Governance Plaza → room discovery / event boards → portals**.
 
 | System | Location | Notes |
 |---|---|---|
+| World graphics layer | `src/graphics/` | Pastel sky, stars, stage, rails, pillars, centerpiece, badges, signage — additive, not gameplay |
 | Hybrid demo universe | `src/hybrid/` | Seeded avatars, event pedestals, quest markers, scoreboard, room/event boards (same seed as the mobile companion) |
 | Entrance gate and crew pads | `src/entities/entrance.ts` | South gate; Sun/Moon join pads |
 | Arena floor, rails, pylons | `src/entities/arena.ts` | Gate openings on the north/south rails |
@@ -85,7 +86,7 @@ Quality-gated in `setupAdvancedVisuals()` after platform detection:
 | Audio | `src/systems/audio.ts` | Ambient + pull/surge/combo SFX (`sounds/`) |
 | LOD | `src/systems/lod.ts`, `src/materials/LODSystem.ts` | Distance scale + mesh swap |
 
-Toggle with `ENABLE_ADVANCED_VISUALS` / `ENABLE_SCENE_AUDIO` in `src/config.ts`.
+Toggle with `ENABLE_ADVANCED_VISUALS` / `ENABLE_WORLD_GRAPHICS` / `ENABLE_SCENE_AUDIO` in `src/config.ts`. The graphics layer is documented in `docs/25_PLUS_PAGES_3D_GRAPHICS_CODE.md`.
 
 ## Controls
 

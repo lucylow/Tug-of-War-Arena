@@ -1,13 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ethers, type InterfaceAbi } from "ethers";
 
+import { getDemoWalletAdapter, getWalletAdapter } from "@/lib/blockchain";
+import { isWrongNetwork } from "@/lib/blockchain/network";
+import { normalizeWalletError, safeWalletDiagnostic, type NormalizedWalletError } from "@/lib/blockchain/wallet/errors";
+import type { WalletConnectionState } from "@/lib/blockchain/wallet/types";
 import { DemoModeManager } from "@/lib/mock/DemoModeManager";
+import { canAccessBrowserEthereum } from "@/lib/runtime";
 import { DEFAULT_CHAIN_ID } from "@/lib/web3/config";
 import { connectLiveSession, disconnectLiveSession } from "@/lib/web3/client";
 import { getInjectedProvider } from "@/lib/web3/detect";
 import { formatWalletError, shouldFallbackToDemo, toUserFacingError, toWalletError } from "@/lib/web3/errors";
 import { parseChainId } from "@/lib/web3/format";
-import { DEMO_ACCOUNT } from "@/lib/web3/session";
+import { DEMO_IDENTITY_ADDRESS } from "@/lib/web3/session";
 import { switchEthereumChain } from "@/lib/web3/switch-chain";
 import type { ConnectionMode, ConnectModeRequest, Eip1193Like } from "@/lib/web3/types";
 import { WalletService } from "@/lib/web3/WalletService";
@@ -21,7 +26,10 @@ export type WalletContextValue = {
   isConnecting: boolean;
   balance: string | null;
   connectionMode: ConnectionMode | null;
+  walletState: WalletConnectionState;
+  walletError: NormalizedWalletError | null;
   connect: (options?: { mode?: ConnectModeRequest }) => Promise<ConnectionMode>;
+  continueDemo: () => Promise<ConnectionMode>;
   disconnect: () => Promise<void>;
   switchNetwork: (chainId: number) => Promise<void>;
   refreshBalance: () => Promise<string | null>;
@@ -49,6 +57,8 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [balance, setBalance] = useState<string | null>(null);
   const [connectionMode, setConnectionMode] = useState<ConnectionMode | null>(null);
+  const [walletState, setWalletState] = useState<WalletConnectionState>("available");
+  const [walletError, setWalletError] = useState<NormalizedWalletError | null>(null);
 
   const detachProviderListeners = useCallback(() => {
     const ethProvider = ethProviderRef.current;
@@ -73,6 +83,8 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     setIsConnected(false);
     setBalance(null);
     setConnectionMode(null);
+    setWalletState("available");
+    setWalletError(null);
   }, [detachProviderListeners]);
 
   const applyDemoSession = useCallback(() => {
@@ -84,15 +96,24 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     accountRef.current = null;
     setProvider(null);
     setSigner(null);
-    setAccount(DEMO_ACCOUNT);
+    void getDemoWalletAdapter().connect().then((demo) => {
+      setAccount(demo.address);
+      setChainId(demo.chainId ?? DEFAULT_CHAIN_ID);
+    }).catch(() => {
+      setAccount(DEMO_IDENTITY_ADDRESS);
+      setChainId(DEFAULT_CHAIN_ID);
+    });
+    setAccount(DEMO_IDENTITY_ADDRESS);
     setChainId(DEFAULT_CHAIN_ID);
     setBalance(null);
     setIsConnected(true);
     setConnectionMode("demo");
+    setWalletState("connected");
+    setWalletError(null);
     void WalletService.getInstance().connectDemo(DEFAULT_CHAIN_ID);
     void manager
       .getOrCreateService()
-      .getBalance(DEMO_ACCOUNT)
+      .getBalance(DEMO_IDENTITY_ADDRESS)
       .then((value) => setBalance(String(value)))
       .catch(() => setBalance("0"));
   }, [detachProviderListeners]);
@@ -107,6 +128,8 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     setChainId(nextChainId);
     setIsConnected(true);
     setConnectionMode("live");
+    setWalletState(isWrongNetwork(nextChainId) ? "wrong-network" : "connected");
+    setWalletError(null);
     try {
       setSigner(await ethersProvider.getSigner());
     } catch {
@@ -155,8 +178,22 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(async (options?: { mode?: ConnectModeRequest }) => {
     const requested = options?.mode ?? "auto";
     setIsConnecting(true);
+    setWalletState("connecting");
+    setWalletError(null);
     try {
       if (requested === "demo") {
+        applyDemoSession();
+        return "demo" as const;
+      }
+      const adapter = getWalletAdapter();
+      if (adapter.kind === "demo") {
+        if (requested === "live") {
+          const normalized = normalizeWalletError(new Error("MetaMask is not available on this device."));
+          setWalletError(normalized);
+          setWalletState("unsupported");
+          throw toWalletError(new Error(normalized.message));
+        }
+        DemoModeManager.getInstance().setFallbackReason("live-unavailable");
         applyDemoSession();
         return "demo" as const;
       }
@@ -167,7 +204,10 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         await applyLiveSession(live.provider, address, parseChainId(live.chainId) ?? DEFAULT_CHAIN_ID);
         return "live" as const;
       } catch (error) {
-        if (__DEV__) console.warn("Wallet connect failed:", formatWalletError(error), error);
+        const normalized = normalizeWalletError(error);
+        if (__DEV__) console.warn("Wallet connect failed:", safeWalletDiagnostic(error), formatWalletError(error));
+        setWalletError(normalized);
+        setWalletState(normalized.code === "USER_REJECTED" ? "rejected" : "error");
         if (requested === "live" || !shouldFallbackToDemo(error)) {
           throw toWalletError(error);
         }
@@ -175,10 +215,20 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         applyDemoSession();
         return "demo" as const;
       }
+    } catch (error) {
+      const normalized = normalizeWalletError(error);
+      setWalletError(normalized);
+      setWalletState(normalized.code === "USER_REJECTED" ? "rejected" : normalized.code === "UNSUPPORTED_RUNTIME" ? "unsupported" : "error");
+      throw error;
     } finally {
       setIsConnecting(false);
     }
   }, [applyDemoSession, applyLiveSession]);
+
+  const continueDemo = useCallback(async () => {
+    applyDemoSession();
+    return "demo" as const;
+  }, [applyDemoSession]);
 
   const disconnect = useCallback(async () => {
     try {
@@ -256,13 +306,16 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
   }, [refreshBalance, signer]);
 
   const signMessage = useCallback(async (message: string) => {
+    if (connectionMode === "demo") {
+      return "DEMO_SIGNATURE";
+    }
     if (!signer) throw new Error("Connect MetaMask to sign a message.");
     try {
       return await signer.signMessage(message);
     } catch (error) {
       throw toWalletError(error);
     }
-  }, [signer]);
+  }, [connectionMode, signer]);
 
   const getContract = useCallback((address: string, abi: InterfaceAbi) => {
     const runner = signer ?? provider;
@@ -273,6 +326,7 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      if (!canAccessBrowserEthereum()) return;
       const injected = getInjectedProvider();
       if (!injected) return;
       try {
@@ -281,7 +335,7 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
         const rawChainId = (await injected.request({ method: "eth_chainId" })) as string;
         await applyLiveSession(injected, accounts[0], parseChainId(rawChainId) ?? DEFAULT_CHAIN_ID);
       } catch (error) {
-        if (__DEV__) console.warn("MetaMask session restore skipped:", formatWalletError(error), error);
+        if (__DEV__) console.warn("MetaMask session restore skipped:", safeWalletDiagnostic(error), formatWalletError(error));
       }
     })();
     return () => {
@@ -298,14 +352,17 @@ export function MetaMaskProvider({ children }: { children: ReactNode }) {
     isConnecting,
     balance,
     connectionMode,
+    walletState,
+    walletError,
     connect,
+    continueDemo,
     disconnect,
     switchNetwork,
     refreshBalance,
     sendTransaction,
     signMessage,
     getContract,
-  }), [account, balance, chainId, connect, connectionMode, disconnect, getContract, isConnected, isConnecting, provider, refreshBalance, sendTransaction, signMessage, signer, switchNetwork]);
+  }), [account, balance, chainId, connect, continueDemo, connectionMode, disconnect, getContract, isConnected, isConnecting, provider, refreshBalance, sendTransaction, signMessage, signer, switchNetwork, walletError, walletState]);
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 }

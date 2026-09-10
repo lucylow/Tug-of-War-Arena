@@ -1,0 +1,37 @@
+{
+  "ecs7": true,
+  "runtimeVersion": "7",
+  "display": {
+    "title": "Tug of War Arena: Friendzone",
+    "description": "SDK7 Friendzone World: spawn, choose a crew, pull the rope, explore events, governance, and achievements. Replace worldConfiguration.name before production publishing.",
+    "navmapThumbnail": "images/scene-thumbnail.png",
+    "favicon": "favicon_asset"
+  },
+  "owner": "",
+  "contact": {
+    "name": "Tug of War Arena: Friendzone",
+    "email": ""
+  },
+  "main": "bin/index.js",
+  "tags": ["game", "friendzone", "arena", "social", "governance"],
+  "scene": {
+    "parcels": ["0,0", "0,1", "1,0", "1,1"],
+    "base": "0,0"
+  },
+  "spawnPoints": [
+    {
+      "name": "friendzone-spawn",
+      "default": true,
+      "position": { "x": [15, 17], "y": [0, 0], "z": [3, 5] },
+      "cameraTarget": { "x": 16, "y": 2, "z": 16 }
+    }
+  ],
+  "skyboxConfig": {
+    "fixedTime": 72000
+  },
+  "requiredPermissions": [],
+  "featureToggles": {},
+  "worldConfiguration": {
+    "name": "YOUR-NAME.dcl.eth"
+  }
+}

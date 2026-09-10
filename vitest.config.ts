@@ -9,6 +9,6 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.ts"],
-    exclude: ["contracts/**", "scene/**", "node_modules/**", "dist/**"],
+    exclude: ["contracts/**", "scene/**", "decentraland-world/**", "node_modules/**", "dist/**"],
   },
 });

@@ -1,0 +1,1 @@
+export { createMatches } from './generator'

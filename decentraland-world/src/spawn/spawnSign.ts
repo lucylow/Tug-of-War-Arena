@@ -1,0 +1,1 @@
+export { createSpawnSign } from './spawnArea'

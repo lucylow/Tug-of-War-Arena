@@ -35,16 +35,18 @@ const FEATURED_PLAYERS: ReadonlyArray<{
   highlighted: boolean;
   spawn: Vec3;
 }> = [
-  { displayName: "NovaWisp", team: "sun", zone: "sun-base", highlighted: true, spawn: { x: 4.6, y: 0.85, z: 16 } },
-  { displayName: "PixelRally", team: "moon", zone: "moon-base", highlighted: true, spawn: { x: 27.4, y: 0.85, z: 16 } },
-  { displayName: "MoonRunner", team: "moon", zone: "spectator", highlighted: false, spawn: { x: 18.2, y: 0.85, z: 12.4 } },
-  { displayName: "SunSpark", team: "sun", zone: "plaza", highlighted: false, spawn: { x: 12.4, y: 0.85, z: 22.6 } },
-  { displayName: "RopeWizard", team: "sun", zone: "sun-base", highlighted: true, spawn: { x: 6.2, y: 0.85, z: 14.2 } },
-  { displayName: "Lumen", team: "sun", zone: "spectator", highlighted: false, spawn: { x: 14.1, y: 0.85, z: 10.8 } },
-  { displayName: "Nyx", team: "moon", zone: "plaza", highlighted: false, spawn: { x: 20.4, y: 0.85, z: 23.1 } },
-  { displayName: "Solace", team: "sun", zone: "sun-base", highlighted: false, spawn: { x: 5.1, y: 0.85, z: 18.6 } },
-  { displayName: "Tide", team: "moon", zone: "moon-base", highlighted: false, spawn: { x: 26.2, y: 0.85, z: 18.1 } },
-  { displayName: "OrbitAce", team: "moon", zone: "spectator", highlighted: false, spawn: { x: 16.8, y: 0.85, z: 9.6 } },
+          { displayName: "NovaWisp", team: "sun", zone: "sun-base", highlighted: true, spawn: { x: 4.6, y: 0.85, z: 16 } },
+          { displayName: "PixelRally", team: "moon", zone: "moon-base", highlighted: true, spawn: { x: 27.4, y: 0.85, z: 16 } },
+          { displayName: "MoonRunner", team: "moon", zone: "spectator", highlighted: false, spawn: { x: 18.2, y: 0.85, z: 12.4 } },
+          { displayName: "SunSpark", team: "sun", zone: "plaza", highlighted: false, spawn: { x: 12.4, y: 0.85, z: 22.6 } },
+          { displayName: "RopeWizard", team: "sun", zone: "sun-base", highlighted: true, spawn: { x: 6.2, y: 0.85, z: 14.2 } },
+          { displayName: "ArenaFox", team: "sun", zone: "sun-base", highlighted: false, spawn: { x: 8.4, y: 0.85, z: 18.1 } },
+          { displayName: "TorqueKid", team: "moon", zone: "moon-base", highlighted: false, spawn: { x: 24.2, y: 0.85, z: 14.8 } },
+          { displayName: "CloudPull", team: "sun", zone: "spectator", highlighted: false, spawn: { x: 10.1, y: 0.85, z: 10.6 } },
+          { displayName: "NeonTug", team: "moon", zone: "plaza", highlighted: false, spawn: { x: 22.8, y: 0.85, z: 20.4 } },
+          { displayName: "OrbitAce", team: "moon", zone: "spectator", highlighted: false, spawn: { x: 16.8, y: 0.85, z: 9.6 } },
+          { displayName: "FluxFighter", team: "sun", zone: "plaza", highlighted: false, spawn: { x: 5.4, y: 0.85, z: 21.2 } },
+          { displayName: "StarGrip", team: "moon", zone: "moon-base", highlighted: false, spawn: { x: 26.6, y: 0.85, z: 22.1 } },
 ];
 
 const EXTRA_NAMES = [
@@ -54,8 +56,6 @@ const EXTRA_NAMES = [
   "NimbusBay",
   "VoltCrew",
   "ShadeHop",
-  "CoralKnot",
-  "IvySurge",
 ] as const;
 
 const ROOM_PHASES: WorldRoomPhase[] = ["waiting", "countdown", "active", "finished"];

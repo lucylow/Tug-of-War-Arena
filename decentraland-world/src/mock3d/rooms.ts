@@ -1,0 +1,1 @@
+export { createRooms } from './generator'

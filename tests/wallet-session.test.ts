@@ -21,7 +21,7 @@ describe("wallet presentation helpers", () => {
     expect(resolveConnectStrategy(true)).toBe("injected");
     expect(shouldFallbackToDemo({ code: 4001 })).toBe(false);
     expect(shouldFallbackToDemo(new Error("unavailable"))).toBe(true);
-    expect(formatWalletError({ code: 4001 })).toBe("Connection was rejected in MetaMask.");
+    expect(formatWalletError({ code: 4001 })).toBe("Wallet connection canceled.");
   });
 
   it("maps Friendzone chain ids to arcade network names", () => {

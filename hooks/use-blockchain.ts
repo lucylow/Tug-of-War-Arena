@@ -7,11 +7,11 @@ import { DEFAULT_CHAIN_ID } from "@/lib/web3/config";
 import { formatAddress, getNetworkName } from "@/lib/web3/format";
 import { resolveLiveContracts } from "@/lib/web3/live";
 import { useWallet } from "@/lib/web3/MetaMaskProvider";
-import { DEMO_ACCOUNT } from "@/lib/web3/session";
+import { isDemoAccount } from "@/lib/web3/session";
 
 function toMockActor(account: string | null): string {
   if (!account) return "user_0";
-  if (account.toLowerCase() === DEMO_ACCOUNT.toLowerCase()) return "user_0";
+  if (isDemoAccount(account)) return "user_0";
   return account;
 }
 

@@ -102,6 +102,15 @@ export function getExplorerAddressUrl(chainId: number | null | undefined, addres
   return `${base}/address/${address}`;
 }
 
+export function getExplorerTransactionUrl(chainId: number | null | undefined, hash: string | null | undefined): string | null {
+  return getExplorerTxUrl(chainId, hash);
+}
+
+export function getExplorerProofUrl(chainId: number | null | undefined, hash: string | null | undefined): string | null {
+  if (!hash || hash.startsWith("demo_")) return null;
+  return getExplorerTxUrl(chainId, hash);
+}
+
 export function isSupportedChainId(chainId: number | null | undefined): boolean {
   return chainId != null && chainId in NETWORKS;
 }

@@ -1,3 +1,4 @@
+import { sanitizeWalletMessage, shouldAutoFallbackToDemo } from "@/lib/blockchain/wallet/errors";
 import { getInjectedProvider } from "@/lib/web3/detect";
 
 export type WalletErrorKind =
@@ -105,7 +106,7 @@ export function readErrorMessage(error: unknown): string {
       if (typeof value === "string" && value.trim()) parts.push(value);
     }
   }
-  return parts.join(" ");
+  return sanitizeWalletMessage(parts.join(" "));
 }
 
 function withCause(message: string, error: unknown): Error {
@@ -309,28 +310,19 @@ export function formatWalletErrorTitle(error: unknown): string {
 }
 
 export function shouldFallbackToDemo(error: unknown): boolean {
-  if (isUserRejected(error) || isPendingRequest(error)) return false;
-  if (isLockedWallet(error) || isUnauthorizedWallet(error) || isWalletDisconnected(error) || isWalletTimeout(error)) {
-    return false;
+  let hasInjected = false;
+  try {
+    hasInjected = Boolean(getInjectedProvider());
+  } catch {
+    hasInjected = false;
   }
-  if (isUnsupportedWalletMethod(error)) return false;
-  if (isFailedWalletConnect(error)) {
-    try {
-      return !getInjectedProvider();
-    } catch {
-      return true;
-    }
-  }
-  const code = getWalletErrorCode(error);
-  if (code === 4001 || code === -32002 || code === 4100 || code === 4900 || code === 4901) return false;
-  if (getWalletErrorStringCode(error) === "ACTION_REJECTED") return false;
-  return true;
+  return shouldAutoFallbackToDemo(error, hasInjected);
 }
 
 export function formatWalletError(error: unknown): string {
   switch (classifyWalletError(error)) {
     case "user_rejected":
-      return "Connection was rejected in MetaMask.";
+      return "Wallet connection canceled.";
     case "pending":
       return "A MetaMask request is already pending. Open the MetaMask popup to continue.";
     case "locked":
@@ -349,7 +341,7 @@ export function formatWalletError(error: unknown): string {
       return "This network is not available in the wallet yet.";
     case "internal":
       if (isFailedWalletConnect(error)) {
-        return "MetaMask could not connect. Unlock the extension, approve this site if prompted, then try again.";
+        return "Wallet connection failed.";
       }
       return "MetaMask could not complete that request. Unlock the extension and try again.";
     default:

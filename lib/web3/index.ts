@@ -24,6 +24,8 @@ export {
   NETWORKS,
   SUPPORTED_NETWORKS,
   getExplorerAddressUrl,
+  getExplorerProofUrl,
+  getExplorerTransactionUrl,
   getExplorerTxUrl,
   getGameContractAddress,
   getNftContractAddress,
@@ -32,7 +34,8 @@ export {
 } from "./config";
 export { formatAddress, formatBalance, formatWalletModeBadge, getNativeSymbol, getNetworkName } from "./format";
 export { decodeMatchCreated, decodeMatchView, decodePlayerInMatch, decodePlayerStats } from "./match";
-export { DEMO_ACCOUNT } from "./session";
+export { DEMO_ACCOUNT, DEMO_IDENTITY_ADDRESS } from "./session";
+export { getInjectedProvider, hasInjectedMetaMask, isLiveWalletAvailable } from "./detect";
 export { WalletService } from "./WalletService";
 export type { WalletInfo } from "./WalletService";
 export {

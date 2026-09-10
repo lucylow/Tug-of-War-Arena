@@ -1,16 +1,18 @@
+import { ENABLE_WORLD_GRAPHICS } from './config'
 import { createCrewBases } from './entities/crewBase'
 import { createCrewBoard } from './entities/crewBoard'
 import { createEntrance } from './entities/entrance'
 import { createMatchPads } from './entities/pads'
 import { createPortals } from './entities/portals'
 import { buildGovernanceExperience } from './governance/bootstrap'
+import { buildAdvancedWorldGraphics } from './graphics/worldGraphics'
 import { bootstrapHybridWorld } from './hybrid'
 import { setupAmbientMotion } from './systems/ambient'
 import { SceneErrorHandler } from './systems/errorHandling'
 import { emitWorldEvent } from './systems/messageBus'
 
 /**
- * Spatial journey assembly: entrance → crew choice → match pads → governance plaza → social board → portals.
+ * Spatial journey assembly: graphics frame → entrance → crew choice → match pads → governance plaza → social board → portals.
  * Gameplay rules stay in `logic/`; this file only places world entities.
  */
 function place(label: string, run: () => void): void {
@@ -22,6 +24,9 @@ function place(label: string, run: () => void): void {
 }
 
 export function assembleWorld(): void {
+  if (ENABLE_WORLD_GRAPHICS) {
+    place('World graphics', () => buildAdvancedWorldGraphics())
+  }
   place('Entrance', () => createEntrance((crew) => emitWorldEvent({ type: 'join', crew, name: 'Visitor' })))
   place('Crew bases', () => createCrewBases())
   place('Match pads', () =>
