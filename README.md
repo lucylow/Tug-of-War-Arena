@@ -4,6 +4,8 @@
 
 The native Decentraland client currently **does not run on mobile devices**. This repository does **not** treat the React Native screens as the World. The World is `decentraland-world/` (SDK7). The Expo app is the portrait companion.
 
+![](https://github.com/lucylow/Tug-of-War-Arena/blob/main/Screenshot%20(1813).png?raw=true)
+
 [![React Native](https://img.shields.io/badge/React%20Native-0.81.x-61DAFB?logo=react)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-54-000020?logo=expo)](https://expo.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
