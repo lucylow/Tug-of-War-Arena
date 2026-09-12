@@ -73,6 +73,7 @@ Tug of War Arena: Friendzone is a **hybrid** product:
 
 The portrait Expo app is a companion. The 3D destination is `decentraland-world/` (SDK7). A compatibility plaza also exists in `scene/`.
 
+![](https://github.com/lucylow/Tug-of-War-Arena/blob/main/Screenshot%20(1812).png?raw=true)
 ```mermaid
 flowchart LR
     MOBILE[React Native Mobile]
