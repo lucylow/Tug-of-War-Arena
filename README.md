@@ -2,9 +2,6 @@
 
 > **A hybrid Friendzone experience: a React Native mobile companion plus a real Decentraland SDK7 3D World, sharing one social domain. Web3 is optional.**
 
-The native Decentraland client currently **does not run on mobile devices**. This repository does **not** treat the React Native screens as the World. The World is `decentraland-world/` (SDK7). The Expo app is the portrait companion.
-
-![](https://github.com/lucylow/Tug-of-War-Arena/blob/main/Screenshot%20(1813).png?raw=true)
 
 [![React Native](https://img.shields.io/badge/React%20Native-0.81.x-61DAFB?logo=react)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-54-000020?logo=expo)](https://expo.dev/)
@@ -12,6 +9,10 @@ The native Decentraland client currently **does not run on mobile devices**. Thi
 [![tRPC](https://img.shields.io/badge/tRPC-11-2596BE)](https://trpc.io/)
 [![Vitest](https://img.shields.io/badge/tests-Vitest-6E9F18?logo=vitest)](https://vitest.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+The native Decentraland client currently **does not run on mobile devices**. This repository does **not** treat the React Native screens as the World. The World is `decentraland-world/` (SDK7). The Expo app is the portrait companion.
+
+![](https://github.com/lucylow/Tug-of-War-Arena/blob/main/Screenshot%20(1813).png?raw=true)
 
 ---
 
